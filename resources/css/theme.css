@@ -1,0 +1,402 @@
+/* =========================================================
+   PORKY – TEMA MODERNO RESTAURANTE (RED EDITION)
+   AdminLTE + Bootstrap 4 + Livewire
+   ========================================================= */
+
+/* ---------------------------------------------------------
+   1. VARIABLES DE MARCA
+--------------------------------------------------------- */
+:root {
+    --brand-dark: #140a0a;
+    --brand-navy: #2a0f0f;
+
+    --brand-primary: #c62828;
+    --brand-primary-dark: #8e0000;
+    --brand-secondary: #e53935;
+
+    --brand-success: #6d4c41;
+
+    --brand-light: #fff5f5;
+    --brand-light-alt: #fbe9e7;
+
+    --brand-border: #f1d2bd;
+}
+
+/* ---------------------------------------------------------
+   2. BASE
+--------------------------------------------------------- */
+body {
+    background: linear-gradient(to bottom, #fff5f5, #fbe9e7);
+    font-size: 0.9rem;
+}
+
+/* Scroll */
+::-webkit-scrollbar {
+    width: 8px;
+}
+::-webkit-scrollbar-thumb {
+    background: var(--brand-primary);
+    border-radius: 4px;
+}
+
+/* ---------------------------------------------------------
+   3. NAVBAR
+--------------------------------------------------------- */
+.main-header.navbar {
+    background: linear-gradient(90deg, var(--brand-dark), var(--brand-primary)) !important;
+    border: none;
+}
+
+.main-header .nav-link {
+    color: #fff !important;
+}
+
+.main-header .nav-link:hover {
+    background: rgba(255,255,255,0.08);
+    border-radius: 6px;
+}
+
+/* ---------------------------------------------------------
+   4. SIDEBAR
+--------------------------------------------------------- */
+.main-sidebar {
+    background-color: var(--brand-dark) !important;
+}
+
+.nav-sidebar .nav-link {
+    color: #fff;
+    border-radius: 6px;
+    margin: 2px 6px;
+}
+
+.nav-sidebar .nav-link:hover {
+    background-color: var(--brand-primary);
+}
+
+.nav-sidebar .nav-link.active {
+    background-color: var(--brand-secondary);
+    color: #fff;
+    font-weight: 600;
+}
+
+/* ---------------------------------------------------------
+   5. CONTENIDO
+--------------------------------------------------------- */
+.content-wrapper {
+    background-color: var(--brand-light);
+}
+
+/* ---------------------------------------------------------
+   6. CARDS
+--------------------------------------------------------- */
+.card {
+    border-radius: 12px;
+    border: none;
+    box-shadow: 0 6px 18px rgba(0,0,0,.08);
+}
+
+.card-header {
+    background: linear-gradient(90deg, var(--brand-secondary), var(--brand-primary));
+    color: #fff;
+    font-weight: 600;
+    border: none;
+}
+
+/* ---------------------------------------------------------
+   7. MODALES
+--------------------------------------------------------- */
+.modal-content {
+    border-radius: 12px;
+    border: none !important;
+    box-shadow: 0 12px 30px rgba(0,0,0,.3);
+}
+
+.modal-header {
+    background: linear-gradient(90deg, var(--brand-dark), var(--brand-primary));
+    color: #fff;
+    border: none;
+}
+
+.modal-body {
+    background-color: var(--brand-light);
+}
+
+.modal-footer {
+    background-color: var(--brand-light-alt);
+}
+
+/* ---------------------------------------------------------
+   8. BOTONES
+--------------------------------------------------------- */
+.btn {
+    border-radius: 6px;
+    font-size: 0.85rem;
+}
+
+/* Primario */
+.btn-primary {
+    background-color: var(--brand-primary);
+    border-color: var(--brand-primary);
+}
+
+.btn-primary:hover {
+    background-color: var(--brand-primary-dark);
+}
+
+/* Secundario */
+.btn-secondary {
+    background-color: var(--brand-secondary);
+    border-color: var(--brand-secondary);
+    color: #fff;
+}
+
+/* Éxito */
+.btn-success {
+    background-color: var(--brand-success);
+}
+
+/* Peligro */
+.btn-danger {
+    background-color: #b71c1c;
+}
+
+/* Acciones pequeñas */
+.table-actions .btn {
+    padding: 0.25rem 0.45rem;
+    border-radius: 6px;
+}
+
+/* ---------------------------------------------------------
+   9. FORMULARIOS
+--------------------------------------------------------- */
+.form-control {
+    border-radius: 6px;
+    border: 1px solid var(--brand-border);
+}
+
+.form-control:focus {
+    border-color: var(--brand-primary);
+    box-shadow: 0 0 0 0.1rem rgba(198,40,40,0.25);
+}
+
+/* ---------------------------------------------------------
+   10. TABLAS
+--------------------------------------------------------- */
+.table {
+    font-size: 0.9rem;
+}
+
+.table thead th {
+    background-color: var(--brand-navy);
+    color: #fff;
+    border: none;
+}
+
+.table tbody tr {
+    transition: all .15s ease;
+}
+
+.table tbody tr:hover {
+    background-color: #fff0f0;
+}
+
+.table td {
+    border-top: 1px solid var(--brand-border);
+}
+
+/* ---------------------------------------------------------
+   11. BADGES (OPERACIÓN)
+--------------------------------------------------------- */
+.badge {
+    font-size: 0.75rem;
+    border-radius: 4px;
+    padding: 0.35em 0.6em;
+}
+
+/* Estados */
+.badge-pending {
+    background-color: #ff9800;
+}
+
+.badge-cooking {
+    background-color: var(--brand-secondary);
+}
+
+.badge-ready {
+    background-color: #43a047;
+}
+
+.badge-delivered {
+    background-color: var(--brand-success);
+}
+
+/* ---------------------------------------------------------
+   12. PAGINACIÓN
+--------------------------------------------------------- */
+.pagination .page-link {
+    color: var(--brand-primary);
+}
+
+.pagination .page-item.active .page-link {
+    background-color: var(--brand-primary);
+    border-color: var(--brand-primary);
+}
+
+/* ---------------------------------------------------------
+   13. BUSCADOR
+--------------------------------------------------------- */
+input[type="search"] {
+    border-radius: 6px;
+    border: 1px solid var(--brand-border);
+    padding: 0.4rem 0.6rem;
+}
+
+input[type="search"]:focus {
+    border-color: var(--brand-primary);
+}
+
+/* ---------------------------------------------------------
+   14. RESPONSIVE
+--------------------------------------------------------- */
+@media (max-width: 768px) {
+    .card {
+        margin-bottom: 1rem;
+    }
+}
+
+/* =====================================================
+   BOTONES DE ACCIÓN – PORKY (VISIBILIDAD ALTA)
+   ===================================================== */
+
+/* Contenedor */
+.table-actions .btn {
+    border-radius: 6px;
+    padding: 0.35rem 0.55rem;
+    font-size: 0.8rem;
+    border: none;
+    transition: all 0.15s ease;
+}
+
+/* EDITAR */
+.btn-edit {
+    background-color: #ff7043; /* naranja suave para contraste */
+    color: #fff;
+}
+
+.btn-edit:hover {
+    background-color: #e64a19;
+    transform: translateY(-1px);
+}
+
+/* ELIMINAR */
+.btn-delete {
+    background-color: #b71c1c;
+    color: #fff;
+}
+
+.btn-delete:hover {
+    background-color: #7f0000;
+    transform: translateY(-1px);
+}
+
+/* ICONOS */
+.table-actions i {
+    font-size: 0.85rem;
+}
+
+/* BOTÓN CREAR */
+.btn-create {
+    background: linear-gradient(90deg, #c62828, #e53935);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 0.45rem 0.75rem;
+    font-weight: 500;
+    box-shadow: 0 4px 10px rgba(198,40,40,.25);
+}
+
+.btn-create:hover {
+    background: linear-gradient(90deg, #8e0000, #c62828);
+    transform: translateY(-1px);
+}
+
+/* =====================================================
+   BOTONES CEF – PORKY (GASTRONÓMICO PRO)
+   ===================================================== */
+
+/* Base */
+.btn-cef {
+    border-radius: 10px;
+    font-size: 0.8rem;
+    padding: 0.4rem 0.6rem;
+    border: none;
+    transition: all 0.18s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ICONOS */
+.btn-cef i {
+    font-size: 0.85rem;
+}
+
+/* =========================
+   CREAR (DESTACADO PERO DIFERENTE AL HEADER)
+========================= */
+.btn-cef-create {
+    background: linear-gradient(135deg, #ff7043, #d84315);
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(216,67,21,.35);
+}
+
+.btn-cef-create:hover {
+    background: linear-gradient(135deg, #e64a19, #bf360c);
+    transform: translateY(-2px) scale(1.03);
+}
+
+/* =========================
+   EDITAR (MARRÓN PREMIUM)
+========================= */
+.btn-cef-edit {
+    background: linear-gradient(135deg, #6d4c41, #4e342e);
+    color: #fff;
+    box-shadow: 0 3px 8px rgba(0,0,0,.25);
+}
+
+.btn-cef-edit:hover {
+    background: linear-gradient(135deg, #5d4037, #3e2723);
+    transform: translateY(-2px);
+}
+
+/* =========================
+   ELIMINAR (ROJO PROFUNDO)
+========================= */
+.btn-cef-delete {
+    background: linear-gradient(135deg, #c62828, #8e0000);
+    color: #fff;
+    box-shadow: 0 3px 8px rgba(198,40,40,.35);
+}
+
+.btn-cef-delete:hover {
+    background: linear-gradient(135deg, #b71c1c, #5f0000);
+    transform: translateY(-2px);
+}
+
+/* =========================
+   GRUPO
+========================= */
+.btn-group .btn-cef {
+    margin: 0 3px;
+}
+
+/* HOVER GLOBAL */
+.btn-cef:hover {
+    box-shadow: 0 6px 16px rgba(0,0,0,.25);
+}
+
+/* DISABLED */
+.btn-cef:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
