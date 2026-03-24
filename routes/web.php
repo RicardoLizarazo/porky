@@ -1,10 +1,12 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Auth;
 
+// Página inicial → login
 Route::get('/', function () {
-    return view('welcome');
-});
+    return view('auth.login');
+})->name('root');
 
 Auth::routes();
 
@@ -12,6 +14,7 @@ Auth::routes();
 Route::middleware(['auth'])->group(function () {
     Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
     //Route::get('/dashboard', fn() => view('livewire.dashboard'))->name('dashboard');
+    Route::get('/menu', fn() => view('livewire.menu'))->name('menu');
     Route::get('/locations', fn() => view('livewire.locations'))->name('locations');
     Route::get('/products', fn() => view('livewire.products'))->name('products');
     Route::get('/categories', fn() => view('livewire.categories'))->name('categories');

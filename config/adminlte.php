@@ -316,6 +316,11 @@ return [
             'text' => 'search',
         ],
         [
+            'text' => 'Menu',
+            'url'  => 'menu',
+            'icon' => 'fas fa-utensils',
+        ],
+        [
             'text' => 'Restaurante',
             'url'  => 'admin/settings',
             'icon' => 'fas fa-store',

@@ -53,6 +53,8 @@ class Location extends Model
         }
 
         $now = Carbon::now();
+
+        // 👇 IMPORTANTE: mismo formato que tu JSON
         $day = strtolower($now->format('l')); // monday, tuesday...
 
         $daySchedule = $this->schedule[$day] ?? null;
