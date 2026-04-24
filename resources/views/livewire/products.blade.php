@@ -10,12 +10,6 @@
                     <i class="fas fa-users-cog mr-2"></i> Gesti&oacute;n de Productos
                 </h1>
             </div>
-            <div class="col-sm-6">
-                <ol class="breadcrumb float-sm-right">
-                    <li class="breadcrumb-item"><a href="{{ route('home') }}"><i class="fas fa-home"></i> Seguridad</a></li>
-                    <li class="breadcrumb-item active">Productos</li>
-                </ol>
-            </div>
         </div>
     </div>
 @stop

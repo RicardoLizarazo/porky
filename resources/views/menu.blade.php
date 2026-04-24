@@ -42,7 +42,12 @@
 
                             {{-- BOTÓN VER --}}
                             <button 
-                                wire:click="$dispatch('view-product', { id: {{ $product->id }} })"
+                                wire:click="$dispatch('view-product', {
+                                    name: '{{ $product->name }}',
+                                    description: '{{ $product->description }}',
+                                    image: '{{ $product->image ? asset('storage/'.$product->image) : asset('images/no-image.png') }}',
+                                    price: {{ $product->price }}
+                                })"
                                 class="btn btn-dark btn-sm btn-view">
                                 <i class="fas fa-eye"></i>
                             </button>
@@ -120,65 +125,144 @@
 </div>
 @push('script')
     <script>
-    document.addEventListener('livewire:init', () => {
-        /*
-        |--------------------------------------------------------------------------
-        | MODAL PRODUCTO
-        |--------------------------------------------------------------------------
-        */
-        Livewire.on('product-data', (data) => {
-            Swal.fire({
-                title: data.name,
-                html: `
-                    <p>${data.description}</p>
-                    <strong style="font-size:18px;">
-                        $${Number(data.price).toLocaleString()}
-                    </strong>
-                `,
-                imageUrl: data.image,
-                confirmButtonText: 'Agregar al carrito',
-                confirmButtonColor: '#dc3545'
+        document.addEventListener('livewire:init', () => {
+            // 🔥 DEFINE PRIMERO
+            const Toast = Swal.mixin({
+                toast: true,
+                position: "top-end",
+                showConfirmButton: false,
+                timer: 2000,
+                timerProgressBar: true,
+                didOpen: (toast) => {
+                    toast.onmouseenter = Swal.stopTimer;
+                    toast.onmouseleave = Swal.resumeTimer;
+                }
             });
 
+            /*
+            |--------------------------------------------------------------------------
+            | TOAST PRODUCTO
+            |--------------------------------------------------------------------------
+            */
+            window.addEventListener('product-added-toast', event => {
+                const { name } = event.detail;
+
+                Toast.fire({
+                    icon: "success",
+                    title: `${name} agregado`
+                });
+            });
+            
+            /*
+            |--------------------------------------------------------------------------
+            | MODAL PRODUCTO
+            |--------------------------------------------------------------------------
+            */
+            Livewire.on('view-product', (data) => {
+                Swal.fire({
+                    title: data.name,
+                    html: `
+                        <div class="product-modal">
+                            <img src="${data.image}" class="product-modal-img"/>
+                            <p class="mt-2">${data.description}</p>
+                            <strong>$${Number(data.price).toLocaleString()}</strong>
+                        </div>
+                    `,
+                    showConfirmButton: true,
+                    confirmButtonText: 'Ok',
+                    confirmButtonColor: '#dc3545'
+                });
+            });
+
+            /*
+            |--------------------------------------------------------------------------
+            | ANIMACIÓN AL CARRITO
+            |--------------------------------------------------------------------------
+            */
+            Livewire.on('animate-cart', ({ id }) => {
+
+                const img = document.querySelector(`.flyable[data-id='${id}']`);
+                const cart = document.getElementById('cartFab')
+
+                if (!img || !cart) return;
+
+                const imgRect = img.getBoundingClientRect();
+                const cartRect = cart.getBoundingClientRect();
+
+                const clone = img.cloneNode(true);
+
+                clone.style.position = 'fixed';
+                clone.style.zIndex = 2000;
+                clone.style.left = imgRect.left + 'px';
+                clone.style.top = imgRect.top + 'px';
+                clone.style.width = imgRect.width + 'px';
+                clone.style.height = imgRect.height + 'px';
+                clone.style.transition = 'all 0.6s cubic-bezier(.4,0,.2,1)';
+
+                document.body.appendChild(clone);
+
+                setTimeout(() => {
+                    clone.style.left = cartRect.left + 'px';
+                    clone.style.top = cartRect.top + 'px';
+                    clone.style.width = '20px';
+                    clone.style.height = '20px';
+                    clone.style.opacity = '0.3';
+                }, 10);
+
+                setTimeout(() => clone.remove(), 700);
+            });
+
+            Livewire.on('confirm-order', () => {
+                Swal.fire({
+                    title: '¿Confirmar pedido?',
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: "#d33",
+                    confirmButtonText: 'Sí, confirmar',
+                }).then((result) => {
+
+                    if (result.isConfirmed) {
+                        Livewire.dispatch('execute-confirm-order');
+                    }
+                });
+            });
+
+            Livewire.on('order-success', (orderId) => {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Pedido realizado',
+                    text: 'Tu pedido fue enviado correctamente',
+                    confirmButtonColor: '#dc3545'
+                });
+            });
+
+            Livewire.on('order-error', (msg) => {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: msg
+                });
+            });
+
+            Livewire.on('print-ticket', (data) => {
+                window.open(data.url, '_blank');
+            });
+
+            Livewire.on('open-inline-create-modal', () => {
+                $('#modal-inline-create').modal('show');
+            });
+
+            Livewire.on('close-inline-create-modal', () => {
+                $('#modal-inline-create').modal('hide');
+            });
+
+            Livewire.on('open-inline-edit-modal', () => {
+                $('#modal-inline-edit').modal('show');
+            });
+
+            Livewire.on('close-inline-edit-modal', () => {
+                $('#modal-inline-edit').modal('hide');
+            });
         });
-
-        /*
-        |--------------------------------------------------------------------------
-        | ANIMACIÓN AL CARRITO
-        |--------------------------------------------------------------------------
-        */
-        Livewire.on('animate-cart', ({ id }) => {
-
-            const img = document.querySelector(`.flyable[data-id='${id}']`);
-            const cart = document.getElementById('cartFab')
-
-            if (!img || !cart) return;
-
-            const imgRect = img.getBoundingClientRect();
-            const cartRect = cart.getBoundingClientRect();
-
-            const clone = img.cloneNode(true);
-
-            clone.style.position = 'fixed';
-            clone.style.zIndex = 2000;
-            clone.style.left = imgRect.left + 'px';
-            clone.style.top = imgRect.top + 'px';
-            clone.style.width = imgRect.width + 'px';
-            clone.style.height = imgRect.height + 'px';
-            clone.style.transition = 'all 0.6s cubic-bezier(.4,0,.2,1)';
-
-            document.body.appendChild(clone);
-
-            setTimeout(() => {
-                clone.style.left = cartRect.left + 'px';
-                clone.style.top = cartRect.top + 'px';
-                clone.style.width = '20px';
-                clone.style.height = '20px';
-                clone.style.opacity = '0.3';
-            }, 10);
-
-            setTimeout(() => clone.remove(), 700);
-        });
-    });
     </script>
 @endpush

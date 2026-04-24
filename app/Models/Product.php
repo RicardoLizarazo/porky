@@ -49,11 +49,6 @@ class Product extends Model
             ->withTimestamps();
     }
 
-    public function cartItems()
-    {
-        return $this->hasMany(CartItem::class);
-    }
-
     /*
     |--------------------------------------------------------------------------
     | SCOPES

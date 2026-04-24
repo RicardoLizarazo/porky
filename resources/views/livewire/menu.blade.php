@@ -6,10 +6,22 @@
     <br>
 @stop
 
+@section('content_top_nav_right')
+    @if(auth('customer')->check())
+        <li class="nav-item">
+            <form method="POST" action="{{ route('logout.any') }}">
+                @csrf
+                <button type="submit" class="nav-link btn btn-link text-danger">
+                    <i class="fas fa-sign-out-alt"></i>
+                </button>
+            </form>
+        </li>
+    @endif
+@endsection
+
 @section('content')
     <livewire:menu></livewire:menu>
     <livewire:cart />
-    <livewire:cart-sidebar /> 
     <livewire:cart-floating />         
 @stop
 

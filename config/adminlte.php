@@ -258,7 +258,7 @@ return [
 
     'use_route_url' => false,
     'dashboard_url' => 'home',
-    'logout_url' => 'logout',
+    'logout_url' => 'logout-any',
     'login_url' => 'login',
     'register_url' => 'register',
     'password_reset_url' => 'password/reset',
@@ -321,6 +321,11 @@ return [
             'icon' => 'fas fa-utensils',
         ],
         [
+            'text' => 'Dashboard',
+            'url'  => 'dashboard',
+            'icon' => 'fas fa-chart-bar',
+        ],
+        [
             'text' => 'Restaurante',
             'url'  => 'admin/settings',
             'icon' => 'fas fa-store',
@@ -328,7 +333,7 @@ return [
                 [
                     'text'=>'Ubicaciones',
                     'url' =>'locations',
-                    'icon' => 'fas fa-map',
+                    'icon' => 'fas fa-map-marker-alt',
                     'can' => 'locations.view',
                     'active' => ['restaurante/locations*'], 
                 ],
@@ -342,28 +347,88 @@ return [
                 [
                     'text'=>'Categorias',
                     'url' =>'categories',
-                    'icon' => 'fas fa-layer-group',
+                    'icon' => 'fas fa-tags',
                     'can' => 'categories.view',
                     'active' => ['restaurante/categories*'], 
                 ],
             ],
         ],
         [
+            'text' => 'Pedidos',
+            'url'  => 'admin/settings',
+            'icon' => 'fas fa-store',
+            'submenu'=>[
+                [
+                    'text'=>'Pedidos',
+                    'url' =>'orders',
+                    'icon' => 'far fa-file-alt',
+                    //'can' => 'customers.view',
+                    'active' => ['orders*'], 
+                ],
+                [
+                    'text'=>'Clientes',
+                    'url' =>'customers',
+                    'icon' => 'fas fa-users',
+                    //'can' => 'customers.view',
+                    'active' => ['customers*'], 
+                ],
+            ],
+        ],
+        [
+            'text' => 'Rutas',
+            'url'  => 'routes',
+            'icon' => 'fas fa-route',
+            //'can'  => 'routes.view',
+            'active' => ['routes*'],
+        ],
+        [
+            'text' => 'Reportes',
+            'url'  => 'reports',
+            'icon' => 'fas fa-chart-line',
+            //'can'  => 'reports.view', // opcional pero recomendado
+            'submenu' => [
+                [
+                    'text' => 'Productos vendidos',
+                    'url'  => 'reports/products',
+                    'icon' => 'fas fa-box',
+                    'active' => ['reports/products*'],
+                ],
+                [
+                    'text' => 'Clientes frecuentes',
+                    'url'  => 'reports/customers',
+                    'icon' => 'fas fa-user-check',
+                    'active' => ['reports/customers*'],
+                ],
+                [
+                    'text' => 'Domiciliarios',
+                    'url'  => 'reports/delivery',
+                    'icon' => 'fas fa-motorcycle',
+                    'active' => ['reports/delivery*'],
+                ],
+                [
+                    'text' => 'Métodos de pago',
+                    'url'  => 'reports/payments',
+                    'icon' => 'fas fa-credit-card',
+                    'active' => ['reports/payments*'],
+                ],
+            ],
+        ],
+        [
             'text' => 'Seguridad',
             'url' => 'admin/security',
-            'icon' => 'fas fa-user-lock',
+            'icon' => 'fas fa-shield-alt',
             'submenu' => [
                 [
                     'text' => 'Usuarios',
                     'url' => 'users',
-                    'icon' => 'fas fa-users',
+                    'icon' => 'fas fa-user-friends',
                     'can' => 'users.view',
                     'active' => ['security/users*'], 
                 ],
                 [
                     'text' => 'Roles',
                     'url' => 'roles',
-                    'icon' => 'fas fa-user-shield',
+                    'icon' => 'fas fa-user-tag',
                     'can' => 'roles.view',
                     'active' => ['security/roles*'], 
 
@@ -371,7 +436,7 @@ return [
                 [
                     'text' => 'Permisos',
                     'url' => 'permissions',
-                    'icon' => 'fas fa-key',
+                    'icon' => 'fas fa-lock',
                     'can' => 'permissions.view',
                     'active' => ['security/permissions*'], 
                 ],

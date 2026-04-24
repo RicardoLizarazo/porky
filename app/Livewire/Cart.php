@@ -4,14 +4,41 @@ namespace App\Livewire;
 
 use Livewire\Component;
 use App\Models\Product;
+use App\Models\Order;
+use App\Models\OrderDetail;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
+use Livewire\Attributes\On;
 
 class Cart extends Component
 {
     public $cart = [];
+    public $customer_id;
+    public $customers = [];
+    public $open = false;
+
+    public $indication = '';
+    public $comment = '';
+
+    public $delivery_cost = 9000;
+
+    protected $listeners = [
+        'cart-add' => 'add',
+        'cart-remove' => 'remove',
+        'open-cart' => 'open',
+        'close-cart' => 'close',
+        'execute-confirm-order' => 'confirmOrder',
+        //'customerSelected' => 'customerSelected',
+    ];
 
     public function mount()
     {
         $this->cart = session()->get('cart', []);
+
+        // 🔥 cargar clientes si es admin
+        if (Auth::check() && !Auth::guard('customer')->check()) {
+            $this->customers = \App\Models\Customer::select('id','name','telephone')->get();
+        }
     }
 
     public function render()
@@ -19,16 +46,20 @@ class Cart extends Component
         return view('livewire.cart');
     }
 
-    protected $listeners = [
-        'cart-add' => 'add',
-        'cart-remove' => 'remove',
-    ];
+    public function open()
+    {
+        $this->open = true;
 
-    /*
-    |--------------------------------------------------------------------------
-    | ADD
-    |--------------------------------------------------------------------------
-    */
+        $this->dispatch('cart-opened');
+    }
+
+    public function close()
+    {
+        $this->open = false;
+
+        $this->dispatch('cart-closed');
+    }
+
     public function add($id)
     {
         $product = Product::findOrFail($id);
@@ -47,13 +78,9 @@ class Cart extends Component
         }
 
         $this->sync();
+        $this->dispatch('product-added-toast', name: $product->name);
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | REMOVE
-    |--------------------------------------------------------------------------
-    */
     public function remove($id)
     {
         if (isset($this->cart[$id])) {
@@ -67,41 +94,169 @@ class Cart extends Component
         $this->sync();
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | SYNC
-    |--------------------------------------------------------------------------
-    */
     private function sync()
     {
         session()->put('cart', $this->cart);
-
-        $this->dispatch('cart-updated'); // refresca todo
-        $this->dispatch('open-cart');    // abre sidebar automáticamente
-        $this->dispatch('cart-opened');
+        $this->dispatch('cart-updated');
+        //$this->dispatch('open-cart');
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | TOTALS
-    |--------------------------------------------------------------------------
-    */
-    public function getSubtotalProperty()
+    public function getSelectedCustomerProperty()
     {
-        return collect($this->cart)->sum(function ($item) {
-            return $item['price'] * $item['quantity'];
-        });
+        return $this->customer_id
+            ? \App\Models\Customer::find($this->customer_id)
+            : null;
     }
 
-    public function getPackagingProperty()
+    #[On('customerSelected')]
+    public function customerSelected($id)
     {
-        return collect($this->cart)->sum(function ($item) {
-            return $item['packaging_cost'] * $item['quantity'];
-        });
+        $this->customer_id = $id;
     }
 
     public function getTotalProperty()
     {
-        return $this->subtotal + $this->packaging;
+        $subtotal = $this->subtotal;
+
+        $packaging = $this->packagingTotal;
+
+        $delivery = $this->delivery_cost ?? 0;
+
+        return $subtotal + $packaging + $delivery;
+    }
+
+    public function getSubtotalProperty()
+    {
+        return collect($this->cart)
+            ->sum(fn($i) => $i['price'] * $i['quantity']);
+    }
+
+    public function getPackagingTotalProperty()
+    {
+        return collect($this->cart)
+            ->sum(fn($i) => ($i['packaging_cost'] ?? 0) * $i['quantity']);
+    }
+
+    public function confirm()
+    {
+        if (empty($this->cart)) {
+            $this->dispatch('order-error', 'El carrito está vacío');
+            return;
+        }
+
+        if (Auth::check() && !Auth::guard('customer')->check() && !$this->customer_id) {
+            $this->dispatch('order-error', 'Debe seleccionar un cliente');
+            return;
+        }
+
+        // 🔥 dispara swal
+        $this->dispatch('confirm-order');
+    }
+
+    //public function cancelConfirm()
+    //{
+        //$this->confirmingOrder = false;
+    //}
+
+    /*
+    |--------------------------------------------------------------------------
+    | CONFIRMAR ORDEN
+    |--------------------------------------------------------------------------
+    */
+    public function confirmOrder()
+    {
+        try {
+            DB::transaction(function () {
+
+                $customerId = $this->resolveCustomerId();
+
+                if (empty($this->cart)) {
+                    throw new \Exception('El carrito está vacío');
+                }
+
+                $totalItems = collect($this->cart)->sum('quantity');
+
+                $subtotal = collect($this->cart)
+                    ->sum(fn($i) => $i['price'] * $i['quantity']);
+
+                $packaging = collect($this->cart)
+                    ->sum(fn($i) => ($i['packaging_cost'] ?? 0) * $i['quantity']);
+
+                $delivery = $this->delivery_cost ?? 0;
+
+                // 🔥 TOTAL CORRECTO
+                $total = $subtotal + $packaging + $delivery;
+
+                $order = Order::create([
+                    'customer_id'    => $customerId,
+                    'user_id'        => Auth::id(),
+                    'type_id'        => 1,
+                    'status_id'      => 1,
+                    'payment_method' => 'Efectivo',
+                    'total_items'    => $totalItems,
+                    'subtotal'       => $subtotal,
+                    'packaging_total'=> $packaging,
+                    'total'          => $total,
+                    'delivery_cost'  => $delivery,
+                    'indication'     => $this->indication,
+                    'comment'        => $this->comment,
+                    'ordered_at'     => now(),
+                ]);
+
+                foreach ($this->cart as $item) {
+                    OrderDetail::create([
+                        'order_id'     => $order->id,
+                        'product_id'   => $item['id'],
+                        'product_name' => $item['name'],
+                        'quantity'     => $item['quantity'],
+                        'price'        => $item['price'],
+                        'subtotal'     => $item['price'] * $item['quantity'],
+                    ]);
+                }
+
+                // 🔥 limpiar carrito BIEN
+                session()->forget('cart');
+
+                $this->reset([
+                    'cart',
+                    'customer_id',
+                    'indication',
+                    'comment',
+                    'delivery_cost'
+                ]);
+
+                $this->delivery_cost = 9000;
+
+                // 🔥 cerrar carrito
+                $this->close();
+
+                $this->dispatch('cart-updated');
+
+                $this->dispatch('order-success', $order->id);
+
+                $this->dispatch('print-ticket', url: route('orders.ticket', $order->id));
+
+            });
+
+        } catch (\Exception $e) {
+            $this->dispatch('order-error', $e->getMessage());
+        }
+    }
+
+    private function resolveCustomerId()
+    {
+        if (Auth::guard('customer')->check()) {
+            return Auth::guard('customer')->id();
+        }
+
+        if (Auth::check()) {
+            if (!$this->customer_id) {
+                throw new \Exception('Debe seleccionar un cliente');
+            }
+
+            return $this->customer_id;
+        }
+
+        throw new \Exception('Debe iniciar sesión');
     }
 }

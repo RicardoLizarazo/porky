@@ -39,7 +39,7 @@
     <p class="redirect">Serás redirigido al inicio...</p>
 
     <script>
-        setTimeout(() => window.location.href = "{{ route('home') }}", 2500);
+        setTimeout(() => window.location.href = "{{ route('menu') }}", 2500);
     </script>
 </body>
 </html>

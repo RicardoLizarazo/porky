@@ -73,18 +73,4 @@ class Menu extends Component
         $cart = session()->get('cart', []);
         return $cart[$id]['quantity'] ?? 0;
     }
-
-    public function showProduct($id)
-    {
-        $product = Product::findOrFail($id);
-
-        $this->dispatch('product-data', [
-            'name' => $product->name,
-            'description' => $product->description,
-            'image' => $product->image 
-                ? asset('storage/'.$product->image)
-                : asset('images/no-image.png'),
-            'price' => $product->price,
-        ]);
-    }
 }

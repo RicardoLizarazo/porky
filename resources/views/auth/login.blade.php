@@ -40,14 +40,7 @@
                     <div class="porky-divider my-3">
                         <span>o</span>
                     </div>
-
-                    <div>
-                        <a href="{{ route('register') }}" class="btn porky-register-btn">
-                            <i class="fas fa-user-plus mr-1"></i>
-                            Crear cuenta nueva
-                        </a>
-                    </div>
-
+                    
                 </div>
 
             </div>
