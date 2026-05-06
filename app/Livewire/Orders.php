@@ -56,6 +56,9 @@ class Orders extends Component
         if (!Auth::user()?->can('users.view')) {
             abort(403, 'No tienes permiso para acceder a esta sección.');
         }
+
+        // 🔥 leer filtro desde localStorage vía JS
+        $this->dispatch('check-order-focus');
     }
 
     public function render()
@@ -425,5 +428,16 @@ class Orders extends Component
 
         $this->dispatch('refreshDatatable');
         $this->dispatch('success', message: 'Método de pago actualizado');
+    }
+
+    #[On('apply-new-filter')]
+    public function applyNewFilter()
+    {
+        // 🔥 aquí decides cómo filtrar
+        $statusNuevoId = \App\Models\StatusOrder::where('name', 'Pendiente')->value('id');
+
+        $this->status_id = $statusNuevoId;
+
+        $this->dispatch('refreshDatatable');
     }
 }

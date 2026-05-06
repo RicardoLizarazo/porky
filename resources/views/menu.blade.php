@@ -1,19 +1,26 @@
 <div class="container-fluid">
-
     {{-- 🔍 BUSCADOR --}}
-    <div class="mb-3">
+    <div class="mb-3 position-relative">
         <input type="text"
-               wire:model.debounce.500ms="search"
-               class="form-control form-control-lg"
-               placeholder="¿Qué quieres comer hoy?">
+            wire:model.live="search"
+            class="form-control form-control-lg pr-5"
+            placeholder="¿Qué quieres comer hoy?">
+
+        @if($search)
+            <button wire:click="$set('search','')"
+                    class="btn btn-sm btn-light position-absolute"
+                    style="top: 50%; right: 10px; transform: translateY(-50%);">
+                ✕
+            </button>
+        @endif
     </div>
 
     {{-- 🧭 CATEGORÍAS TIPO SCROLL --}}
     <div class="mb-3 d-flex overflow-auto pb-2">
 
-        <button wire:click="filterCategory(null)"
-                class="btn btn-sm mr-2 {{ !$category_id ? 'btn-danger' : 'btn-light' }}">
-            Todas
+        <button wire:click="showPopularProducts"
+                class="btn btn-sm mr-2 {{ $showPopular ? 'btn-danger' : 'btn-light' }}">
+            🔥 Populares
         </button>
 
         @foreach($categories as $category)
@@ -264,5 +271,96 @@
                 $('#modal-inline-edit').modal('hide');
             });
         });
+    </script>
+    <script>
+        function setOrderFilter(orderId) {
+            localStorage.setItem('order_focus_id', orderId);
+            localStorage.setItem('order_filter', 'nuevo');
+        }
+        window.Toast = Swal.mixin({
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 3000
+        });
+    </script>
+    
+    <script>
+    /*
+    |--------------------------------------------------------------------------
+    | 🔊 AUDIO GLOBAL
+    |--------------------------------------------------------------------------
+    */
+    let orderAudio = new Audio("{{ asset('sounds/alert.mp3') }}");
+    orderAudio.preload = "auto";
+    orderAudio.volume = 1;
+
+    let audioUnlocked = false;
+
+    // 🔓 desbloqueo real (OBLIGATORIO en navegadores)
+    document.addEventListener('click', function unlockAudio() {
+
+        if (!audioUnlocked) {
+            orderAudio.play()
+                .then(() => {
+                    orderAudio.pause();
+                    orderAudio.currentTime = 0;
+                    audioUnlocked = true;
+                    console.log('🔓 Audio desbloqueado OK');
+                })
+                .catch(e => console.log('Error unlock:', e));
+        }
+
+    }, { once: true });
+
+    /*
+    |--------------------------------------------------------------------------
+    | 🔔 EVENTO LIVEWIRE
+    |--------------------------------------------------------------------------
+    */
+    document.addEventListener('livewire:init', () => {
+
+        Livewire.on('new-order', (event) => {
+
+            console.log('EVENTO new-order', event);
+
+            if (audioUnlocked) {
+                orderAudio.currentTime = 0;
+                orderAudio.play()
+                    .then(() => console.log('🔊 SONANDO'))
+                    .catch(e => console.log('❌ ERROR AUDIO:', e));
+            } else {
+                console.warn('⚠️ Audio bloqueado');
+            }
+
+            if (typeof Toast !== 'undefined') {
+                Toast.fire({
+                    icon: 'success',
+                    title: `+${event.diff} nuevo(s) pedido(s)`
+                });
+            }
+
+        });
+
+    });
+
+    /*
+    |--------------------------------------------------------------------------
+    | 🔥 evitar cierre dropdown
+    |--------------------------------------------------------------------------
+    */
+    $(document).on('click', '.dropdown-menu', function (e) {
+        e.stopPropagation();
+    });
+
+    /*
+    |--------------------------------------------------------------------------
+    | 🔥 filtro
+    |--------------------------------------------------------------------------
+    */
+    function setOrderFilter(orderId) {
+        localStorage.setItem('order_focus_id', orderId);
+        localStorage.setItem('order_filter', 'nuevo');
+    }
     </script>
 @endpush

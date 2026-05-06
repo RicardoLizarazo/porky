@@ -28,7 +28,7 @@ hr {
 
 {{-- 🖼️ LOGO --}}
 <div class="center">
-    <img src="{{ asset('vendor/adminlte/dist/img/logo.png') }}" style="width: 120px;">
+    <img src="{{ asset('vendor/adminlte/dist/img/logo.png') }}" style="width: 100px;">
 </div>
 
 <br>
@@ -53,8 +53,18 @@ hr {
 {{-- 👤 CLIENTE --}}
 <div>
     Nombre: {{ $order->customer?->name }}<br>
-    Dirección: {{ $order->customer?->address ?? '---' }}<br>
-    Teléfono: {{ $order->customer?->telephone }}<br>
+
+    @php
+        $address = $order->customer?->defaultAddress;
+    @endphp
+
+    Dir: {{ $address?->address ?? '---' }}<br>
+
+    @if($address?->reference)
+        Ref: {{ $address->reference }}<br>
+    @endif
+
+    Tel: {{ $order->customer?->telephone }}<br>
 </div>
 
 <hr>

@@ -14,7 +14,7 @@ return [
     |
     */
 
-    'title' => 'Piqueteadero Porky',
+    'title' => 'Piqueteadero Porky de la 105',
     'title_prefix' => 'PP105',
     'title_postfix' => '',
 
@@ -321,9 +321,19 @@ return [
             'icon' => 'fas fa-utensils',
         ],
         [
+            'text' => 'Mis pedidos',
+            'url'  => 'mis-pedidos',
+            'icon' => 'fas fa-receipt',
+            'visible' => function () {
+                return auth()->guard('customer')->check()
+                    && request()->user('web') === null;
+            },
+        ],
+        [
             'text' => 'Dashboard',
             'url'  => 'dashboard',
             'icon' => 'fas fa-chart-bar',
+            'can' => 'dashboard.view',
         ],
         [
             'text' => 'Restaurante',
@@ -362,14 +372,14 @@ return [
                     'text'=>'Pedidos',
                     'url' =>'orders',
                     'icon' => 'far fa-file-alt',
-                    //'can' => 'customers.view',
+                    'can' => 'orders.view',
                     'active' => ['orders*'], 
                 ],
                 [
                     'text'=>'Clientes',
                     'url' =>'customers',
                     'icon' => 'fas fa-users',
-                    //'can' => 'customers.view',
+                    'can' => 'customers.view',
                     'active' => ['customers*'], 
                 ],
             ],
@@ -378,37 +388,48 @@ return [
             'text' => 'Rutas',
             'url'  => 'routes',
             'icon' => 'fas fa-route',
-            //'can'  => 'routes.view',
+            'can'  => 'routes.view',
             'active' => ['routes*'],
         ],
         [
             'text' => 'Reportes',
             'url'  => 'reports',
             'icon' => 'fas fa-chart-line',
-            //'can'  => 'reports.view', // opcional pero recomendado
+            'can'  => 'reports.view',
             'submenu' => [
                 [
                     'text' => 'Productos vendidos',
                     'url'  => 'reports/products',
                     'icon' => 'fas fa-box',
+                    'can' => 'reports.products',
                     'active' => ['reports/products*'],
                 ],
                 [
                     'text' => 'Clientes frecuentes',
                     'url'  => 'reports/customers',
                     'icon' => 'fas fa-user-check',
+                    'can' => 'reports.customers',
                     'active' => ['reports/customers*'],
                 ],
                 [
                     'text' => 'Domiciliarios',
                     'url'  => 'reports/delivery',
                     'icon' => 'fas fa-motorcycle',
-                    'active' => ['reports/delivery*'],
+                    'can' => 'reports.delivery',
+                    'active' => ['reports/delivery'],
+                ],
+                [
+                    'text' => 'Domiciliario detallado',
+                    'url'  => 'reports/delivery_detail',
+                    'icon' => 'fas fa-clipboard-list',
+                    'can' => 'reports.delivery',
+                    'active' => ['reports/delivery_detail*'],
                 ],
                 [
                     'text' => 'Métodos de pago',
                     'url'  => 'reports/payments',
                     'icon' => 'fas fa-credit-card',
+                    'can' => 'reports.payments',
                     'active' => ['reports/payments*'],
                 ],
             ],

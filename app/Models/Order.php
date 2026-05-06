@@ -44,8 +44,7 @@ class Order extends Model
     // Cliente (frontend)
     public function customer()
     {
-        return $this->belongsTo(Customer::class, 'customer_id')
-            ->select('id', 'name', 'email');
+        return $this->belongsTo(Customer::class, 'customer_id');
     }
 
     // Usuario admin que gestionó el pedido
@@ -98,6 +97,13 @@ class Order extends Model
         if (!$statusId) return $query;
 
         return $query->where('status_id', $statusId);
+    }
+
+    public function scopeNew($query)
+    {
+        return $query->whereHas('status', function ($q) {
+            $q->where('name', 'nuevo');
+        });
     }
 
     public function newQuery()

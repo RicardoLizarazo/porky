@@ -19,8 +19,11 @@ class Categories extends Component
     #[Validate('nullable')]
     public $description;
 
-    #[Validate('required|boolean')]
+    #[Validate('boolean')]
     public $is_active = true;
+
+    #[Validate('boolean')]
+    public $is_visible = true;
 
     public function render()
     {
@@ -29,7 +32,7 @@ class Categories extends Component
 
     public function resetInput()
     {
-        $this->reset(['name','description','is_active']);
+        $this->reset(['name','description','is_active','is_visible']);
         $this->resetValidation();
     }
 
@@ -47,7 +50,8 @@ class Categories extends Component
         Category::create([
             'name' => $this->name,
             'description' => $this->description,
-            'is_active' => $this->is_active,
+            'is_active' => (bool) $this->is_active,
+            'is_visible' => (bool) $this->is_visible,
         ]);
 
         $this->dispatch('store');
@@ -62,7 +66,8 @@ class Categories extends Component
         $this->category_id = $id;
         $this->name = $category->name;
         $this->description = $category->description;
-        $this->is_active = $category->is_active;
+        $this->is_active = (bool) $category->is_active;
+        $this->is_visible = (bool) $category->is_visible;
 
         $this->dispatch('open-edit-modal');
     }
@@ -74,7 +79,8 @@ class Categories extends Component
         Category::findOrFail($this->category_id)->update([
             'name' => $this->name,
             'description' => $this->description,
-            'is_active' => $this->is_active,
+            'is_active' => (bool) $this->is_active,
+            'is_visible' => (bool) $this->is_visible,
         ]);
 
         $this->dispatch('update');

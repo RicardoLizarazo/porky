@@ -1,18 +1,21 @@
 @extends('adminlte::page')
 
-@section('title', 'Menu Principal')
+@section('title', 'Mis Pedidos')
 
 @section('content_header')
-    <br>
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1 class="m-0 text-dark">
+                    <i class="fas fa-users-cog mr-2"></i> Gesti&oacute;n de mis Pedidos
+                </h1>
+            </div>
+        </div>
+    </div>
 @stop
 
 @section('content_top_nav_right')
 <ul class="navbar-nav ml-auto">
-
-    @can('users.view')
-        <livewire:orders-bell />
-    @endcan
-
     @if(auth('customer')->check())
         <li class="nav-item">
             <form method="POST" action="{{ route('logout.any') }}">
@@ -23,14 +26,11 @@
             </form>
         </li>
     @endif
-
 </ul>
 @endsection
 
 @section('content')
-    <livewire:menu></livewire:menu>
-    <livewire:cart />
-    <livewire:cart-floating />         
+    <livewire:customerOrders></livewire:customerOrders>           
 @stop
 
 @section('footer')
@@ -41,11 +41,6 @@
 @stop
 
 @section('css')
-    <style>
-        .dropdown-menu {
-            z-index: 9999 !important;
-        }
-    </style>    
     @vite(['resources/css/app.css'])
 @stop
 

@@ -47,7 +47,8 @@
                         <label>Referencia</label>
                         <input type="text"
                                class="form-control"
-                               wire:model.defer="inline_reference">
+                               wire:model.defer="inline_reference"
+                               placeholder="Conjunto Arboleda Torre 1 Apto 1008">
                     </div>
 
                 </div>

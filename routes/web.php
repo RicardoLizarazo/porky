@@ -23,6 +23,13 @@ Route::prefix('customer')->group(function () {
         ->name('customer.logout');
 });
 
+
+Route::middleware('auth:customer')->group(function () {
+    Route::get('/mis-pedidos', function () {
+        return view('livewire.customer-orders');
+    })->name('customer.orders');
+}); 
+
 Route::middleware(['auth.any'])->group(function () {
     Route::get('/menu', fn() => view('livewire.menu'))->name('menu');
 });

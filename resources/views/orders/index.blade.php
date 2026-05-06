@@ -103,6 +103,24 @@
                     text: event.message
                 });
             });
+
+            Livewire.on('check-order-focus', () => {
+                let orderId = localStorage.getItem('order_focus_id');
+                let filter  = localStorage.getItem('order_filter');
+
+                if (filter === 'nuevo') {
+                    Livewire.dispatch('apply-new-filter');
+                }
+
+                if (orderId) {
+                    setTimeout(() => {
+                        Livewire.dispatch('view-order', { id: orderId });
+                        localStorage.removeItem('order_focus_id');
+                    }, 500);
+                }
+
+                localStorage.removeItem('order_filter');
+            });
         });     
     </script>
 @endpush

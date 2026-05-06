@@ -42,18 +42,34 @@
                     </div>
 
                     {{-- ESTADO --}}
-                    <div class="form-group">
-                        <label class="font-weight-bold d-block">Estado</label>
+                    <div class="row">
 
-                        <div class="custom-control custom-switch">
-                            <input type="checkbox"
-                                   class="custom-control-input"
-                                   id="is_active_create"
-                                   wire:model.defer="is_active">
-                            <label class="custom-control-label" for="is_active_create">
-                                Activa
-                            </label>
+                        {{-- VISIBLE --}}
+                        <div class="col-md-6">
+                            <div class="custom-control custom-switch">
+                                <input type="checkbox"
+                                    class="custom-control-input"
+                                    id="visible_create"
+                                    wire:model.defer="is_visible">
+                                <label class="custom-control-label" for="visible_create">
+                                    Visible al cliente
+                                </label>
+                            </div>
                         </div>
+
+                        {{-- ACTIVO --}}
+                        <div class="col-md-6">
+                            <div class="custom-control custom-switch">
+                                <input type="checkbox"
+                                    class="custom-control-input"
+                                    id="active_create"
+                                    wire:model.defer="is_active">
+                                <label class="custom-control-label" for="active_create">
+                                    Activa
+                                </label>
+                            </div>
+                        </div>
+
                     </div>
 
                 </div>

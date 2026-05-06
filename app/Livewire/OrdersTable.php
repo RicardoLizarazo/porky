@@ -39,8 +39,7 @@ class OrdersTable extends DataTableComponent
             Column::make("ID", "id")
                 ->sortable(),
 
-            // 👤 CLIENTE + DIRECCIÓN
-            Column::make("Cliente")
+            Column::make("Cliente", "customer_id")
                 ->label(function($row) {
                     $customer = $row->customer;
 
@@ -53,12 +52,21 @@ class OrdersTable extends DataTableComponent
                     ';
                 })
                 ->html()
-                ->searchable(function (Builder $query, string $searchTerm) {
-                    $query->whereHas('customer', function ($q) use ($searchTerm) {
+                ->searchable(function (Builder $query, $searchTerm) {
+
+                    $cleanSearch = preg_replace('/\D/', '', $searchTerm);
+
+                    $query->orWhereHas('customer', function ($q) use ($searchTerm, $cleanSearch) {
+
                         $q->where('name', 'like', "%{$searchTerm}%")
-                        ->orWhere('email', 'like', "%{$searchTerm}%")
-                        ->orWhere('telephone', 'like', "%{$searchTerm}%");
+                        ->orWhere('email', 'like', "%{$searchTerm}%");
+
+                        if (!empty($cleanSearch)) {
+                            $q->orWhere('telephone', 'like', "%{$cleanSearch}%");
+                        }
+
                     });
+
                 }),
 
             // 📦 TIPO PEDIDO
@@ -104,13 +112,14 @@ class OrdersTable extends DataTableComponent
     public function query(): Builder
     {
         return Order::query()
+            ->select('orders.*')
             ->with([
                 'customer',
                 'status',
                 'delivery',
                 'type',
             ])
-            ->withCount('details'); 
+            ->withCount('details');
     }
 
     public function filters(): array

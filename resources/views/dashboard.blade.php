@@ -7,40 +7,32 @@
                 <option value="today">Hoy</option>
                 <option value="week">Últimos 7 días</option>
                 <option value="month">Este mes</option>
+                <option value="all">Histórico</option>
             </select>
         </div>
 
         {{-- KPIs --}}
         <div class="row mb-4">
-            <div class="col-md-3">
-                <div class="card p-3">
-                    <h6>Ventas</h6>
-                    <h4>${{ number_format($kpis['sales'],0,',','.') }}</h4>
-                </div>
-            </div>
+            @foreach($kpis as $key => $value)
+                <div class="col-md-3">
+                    <div class="card p-3">
+                        <h6>{{ ucfirst($key) }}</h6>
 
-            <div class="col-md-3">
-                <div class="card p-3">
-                    <h6>Pedidos</h6>
-                    <h4>{{ $kpis['orders'] }}</h4>
-                </div>
-            </div>
+                        @if($key === 'growth')
+                            <h4 class="{{ $value >= 0 ? 'text-success' : 'text-danger' }}">
+                                {{ number_format($value,2) }}%
+                            </h4>
+                        @else
+                            <h4>
+                                {{ $key === 'orders' 
+                                    ? $value 
+                                    : '$' . number_format($value,0,',','.') }}
+                            </h4>
+                        @endif
 
-            <div class="col-md-3">
-                <div class="card p-3">
-                    <h6>Ticket Promedio</h6>
-                    <h4>${{ number_format($kpis['avg'],0,',','.') }}</h4>
+                    </div>
                 </div>
-            </div>
-
-            <div class="col-md-3">
-                <div class="card p-3">
-                    <h6>Crecimiento</h6>
-                    <h4 class="{{ $kpis['growth'] >= 0 ? 'text-success' : 'text-danger' }}">
-                        {{ number_format($kpis['growth'],2) }}%
-                    </h4>
-                </div>
-            </div>
+            @endforeach
         </div>
 
         {{-- GRÁFICOS --}}
@@ -69,7 +61,7 @@
 
             <div class="col-md-6 mt-3">
                 <div class="card p-3">
-                    <h5>Productos con baja rotación</h5>
+                    <h5>Productos baja rotación</h5>
                     <div wire:ignore id="lowChart"></div>
                 </div>
             </div>
@@ -83,7 +75,7 @@
     <script>
     document.addEventListener('livewire:init', () => {
 
-        Livewire.hook('morph.updated', () => renderCharts());
+        Livewire.hook('morph.updated', renderCharts);
 
         function renderCharts() {
 
@@ -92,47 +84,30 @@
             const top = @json($topProducts);
             const low = @json($lowProducts);
 
-            // limpiar
             ['dailyChart','monthlyChart','topChart','lowChart']
                 .forEach(id => document.getElementById(id).innerHTML = '');
 
-            // ===== DAILY =====
             new ApexCharts(document.querySelector("#dailyChart"), {
                 chart: { type: 'line', height: 300 },
-                series: [{
-                    name: 'Ventas',
-                    data: daily.map(d => d.total)
-                }],
+                series: [{ data: daily.map(d => d.total) }],
                 xaxis: { categories: daily.map(d => d.date) }
             }).render();
 
-            // ===== MONTHLY =====
             new ApexCharts(document.querySelector("#monthlyChart"), {
                 chart: { type: 'area', height: 300 },
-                series: [{
-                    name: 'Ventas',
-                    data: monthly.map(m => m.total)
-                }],
+                series: [{ data: monthly.map(m => m.total) }],
                 xaxis: { categories: monthly.map(m => m.mes) }
             }).render();
 
-            // ===== TOP =====
             new ApexCharts(document.querySelector("#topChart"), {
                 chart: { type: 'bar', height: 300 },
-                series: [{
-                    name: 'Cantidad',
-                    data: top.map(t => t.total)
-                }],
+                series: [{ data: top.map(t => t.total) }],
                 xaxis: { categories: top.map(t => t.name) }
             }).render();
 
-            // ===== LOW =====
             new ApexCharts(document.querySelector("#lowChart"), {
                 chart: { type: 'bar', height: 300 },
-                series: [{
-                    name: 'Cantidad',
-                    data: low.map(t => t.total)
-                }],
+                series: [{ data: low.map(t => t.total) }],
                 xaxis: { categories: low.map(t => t.name) }
             }).render();
         }
