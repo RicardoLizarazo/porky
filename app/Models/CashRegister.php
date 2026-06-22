@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class OrderDetail extends Model
+class CashRegister extends Model
 {
     /*
     |--------------------------------------------------------------------------
@@ -13,21 +13,14 @@ class OrderDetail extends Model
     */
 
     protected $fillable = [
-        'order_id',
-        'product_id',
-        'product_name',
-        'quantity',
-        'price',
-        'subtotal',
-        'manual_price',
-        'comment',
-        'sent_to_kitchen'
+        'location_id',
+        'floor_id',
+        'name',
+        'is_active',
     ];
 
     protected $casts = [
-        'price'    => 'decimal:2',
-        'subtotal' => 'decimal:2',
-        'manual_price' => 'decimal:2',
+        'is_active' => 'boolean',
     ];
 
     /*
@@ -36,24 +29,34 @@ class OrderDetail extends Model
     |--------------------------------------------------------------------------
     */
 
-    public function order()
+    public function location()
     {
-        return $this->belongsTo(Order::class);
+        return $this->belongsTo(Location::class);
     }
 
-    public function product()
+    public function floor()
     {
-        return $this->belongsTo(Product::class);
+        return $this->belongsTo(Floor::class);
+    }
+
+    public function sessions()
+    {
+        return $this->hasMany(CashSession::class);
+    }
+
+    public function orders()
+    {
+        return $this->hasMany(Order::class);
     }
 
     /*
     |--------------------------------------------------------------------------
-    | ACCESORES
+    | SCOPES
     |--------------------------------------------------------------------------
     */
 
-    public function getSubtotalFormattedAttribute()
+    public function scopeActive($query)
     {
-        return number_format($this->subtotal, 2);
+        return $query->where('is_active', true);
     }
 }

@@ -12,32 +12,44 @@ class OrdersBell extends Component
     public $orders = [];
     public $count = 0;
     public $lastCount = 0;
+
     public $statusNuevoId;
+
+    // ✅ SOLO PEDIDOS WEB
+    public $typeWebId = 1;
 
     public function mount()
     {
-        $this->statusNuevoId = StatusOrder::where('name', 'Pendiente')->value('id');
+        $this->statusNuevoId = StatusOrder::where('name', 'Pendiente')
+            ->value('id');
 
         $this->loadOrders();
+
         $this->lastCount = $this->count;
     }
 
     public function loadOrders()
     {
-        $this->orders = Order::where('status_id', $this->statusNuevoId)
+        $query = Order::where('status_id', $this->statusNuevoId)
+            ->where('type_id', $this->typeWebId);
+
+        $this->orders = $query
             ->latest()
             ->take(5)
             ->get();
 
-        $this->count = Order::where('status_id', $this->statusNuevoId)->count();
+        $this->count = $query->count();
     }
 
     #[On('check-orders')]
     public function checkOrders()
     {
-        $newCount = Order::where('status_id', $this->statusNuevoId)->count();
+        $newCount = Order::where('status_id', $this->statusNuevoId)
+            ->where('type_id', $this->typeWebId)
+            ->count();
 
         if ($newCount > $this->lastCount) {
+
             $diff = $newCount - $this->lastCount;
 
             $this->js("

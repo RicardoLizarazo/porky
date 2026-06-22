@@ -5,6 +5,7 @@ namespace App\Livewire;
 use Livewire\Component;
 use App\Models\Product;
 use App\Models\Category;
+use App\Models\ProductRule;
 use Livewire\Attributes\Validate;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\On;
@@ -45,6 +46,11 @@ class Products extends Component
     public $image;
 
     public $image_preview;
+
+    public $availableRules = [];
+    public $selectedRules = [];
+    public $productId;
+    public $productName;
 
     public function render()
     {
@@ -154,6 +160,37 @@ class Products extends Component
 
         $this->dispatch('update');
         $this->dispatch('refreshDatatable');
+    }
+
+    #[On('product-rules')]
+    public function manageRules($id)
+    {
+        $product = Product::with('rules')
+            ->findOrFail($id);
+
+        $this->productId = $product->id;
+        $this->productName = $product->name;
+
+        $this->selectedRules = $product->rules
+            ->pluck('id')
+            ->toArray();
+
+        $this->availableRules = ProductRule::where('is_active', true)
+            ->orderBy('name')
+            ->get();
+
+        $this->dispatch('open-rules-modal');
+    }
+
+    public function saveRules()
+    {
+        Product::find($this->productId)
+            ->rules()
+            ->sync($this->selectedRules);
+
+        $this->dispatch('success');
+
+        $this->dispatch('rules-saved');
     }
 
     public function delete($id)

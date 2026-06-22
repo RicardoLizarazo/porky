@@ -53,63 +53,62 @@
     </div>
 
     {{-- 🚚 DOMICILIARIO --}}
-    @if($row->type_id == 1)
-        @php
-            static $deliveryUsers;
+    @php
+        static $deliveryUsers;
 
-            if (!$deliveryUsers) {
-                $deliveryUsers = \App\Models\User::whereHas('roles', function($query) {
-                    $query->where('name', 'Domiciliario');
-                })->pluck('name', 'id');
-            }
-        @endphp
+        if (!$deliveryUsers) {
+            $deliveryUsers = \App\Models\User::whereHas('roles', function($query) {
+                $query->where('name', 'Domiciliario');
+            })->pluck('name', 'id');
+        }
+    @endphp
 
-        <div class="btn-group">
-            <button 
-                class="btn action-btn {{ $row->delivery_user_id ? 'action-success' : 'action-info' }} dropdown-toggle"
-                data-toggle="dropdown"
-                title="Asignar domiciliario"
+    <div class="btn-group">
+        <button 
+            class="btn action-btn {{ $row->delivery_user_id ? 'action-success' : 'action-info' }} dropdown-toggle"
+            data-toggle="dropdown"
+            title="Asignar domiciliario"
+        >
+            <i class="fas fa-motorcycle"></i>
+        </button>
+
+        <div class="dropdown-menu shadow-lg">
+
+            {{-- Quitar asignación --}}
+            <a 
+                href="#"
+                class="dropdown-item text-danger"
+                wire:click.prevent="$dispatch('change-delivery', { 
+                    id: {{ $row->id }}, 
+                    delivery: null 
+                })"
             >
-                <i class="fas fa-motorcycle"></i>
-            </button>
+                ❌ Quitar asignación
+            </a>
 
-            <div class="dropdown-menu shadow-lg">
+            <div class="dropdown-divider"></div>
 
-                {{-- Quitar asignación --}}
+            {{-- Lista --}}
+            @foreach($deliveryUsers as $id => $name)
                 <a 
                     href="#"
-                    class="dropdown-item text-danger"
+                    class="dropdown-item d-flex justify-content-between"
                     wire:click.prevent="$dispatch('change-delivery', { 
                         id: {{ $row->id }}, 
-                        delivery: null 
+                        delivery: {{ $id }} 
                     })"
                 >
-                    ❌ Quitar asignación
+                    <span>{{ $name }}</span>
+
+                    @if($row->delivery_user_id == $id)
+                        <i class="fas fa-check text-success"></i>
+                    @endif
                 </a>
+            @endforeach
 
-                <div class="dropdown-divider"></div>
-
-                {{-- Lista --}}
-                @foreach($deliveryUsers as $id => $name)
-                    <a 
-                        href="#"
-                        class="dropdown-item d-flex justify-content-between"
-                        wire:click.prevent="$dispatch('change-delivery', { 
-                            id: {{ $row->id }}, 
-                            delivery: {{ $id }} 
-                        })"
-                    >
-                        <span>{{ $name }}</span>
-
-                        @if($row->delivery_user_id == $id)
-                            <i class="fas fa-check text-success"></i>
-                        @endif
-                    </a>
-                @endforeach
-
-            </div>
         </div>
-    @endif
+    </div>
+
 
     {{-- 💳 MÉTODO DE PAGO --}}
     <div class="btn-group">
@@ -122,7 +121,7 @@
         </button>
 
         <div class="dropdown-menu shadow-lg">
-            @foreach(['Efectivo', 'Transferencia', 'Nequi', 'Daviplata', 'Tarjeta'] as $method)
+            @foreach(['Efectivo', 'Transferencia', 'Nequi', 'Daviplata', 'QR'] as $method)
                 <a 
                     href="#"
                     class="dropdown-item d-flex justify-content-between"

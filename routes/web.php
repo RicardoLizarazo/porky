@@ -68,12 +68,34 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/orders', fn() => view('livewire.orders'))->name('orders');
     Route::get('/customers', fn() => view('livewire.customers'))->name('customers');
     Route::get('/locations', fn() => view('livewire.locations'))->name('locations');
-    Route::get('/products', fn() => view('livewire.products'))->name('products');
+    Route::get('/floors', fn() => view('livewire.floors'))->name('floors');
+    Route::get('/tables', fn() => view('livewire.tables'))->name('tables');
+    
+    Route::get('/cash-registers', fn() => view('livewire.cash-registers'))->name('cash-registers');
+
+    Route::get('/floor-map', fn() => view('livewire.floor-map'))->name('floor-map');
     Route::get('/categories', fn() => view('livewire.categories'))->name('categories');
+    Route::get('/products', fn() => view('livewire.products'))->name('products');
     Route::get('/users', fn() => view('livewire.users'))->name('users');
     Route::get('/roles', fn() => view('livewire.roles'))->name('roles');
     Route::get('/permissions', fn() => view('livewire.permissions'))->name('permissions');
     Route::get('/audit-logs', fn() => view('livewire.audit-logs'))->name('audit-logs');
+
+    Route::get('/pos/{order}', function (\App\Models\Order $order) {
+        return view('livewire.pos-order', compact('order'));
+    })->name('pos.show');
+
+    Route::get('/product-rules', fn() => view('livewire.product-rules'))->name('product-rules');
+
+    // COCINA
+    //Route::get('/kitchen-board', fn() => view('livewire.restaurante.kitchen-board'))->name('kitchen.board');
+    Route::get('/kitchen-dispatch', fn() => view('livewire.restaurante.kitchen-dispatch'))->name('kitchen.dispatch');
+
+    Route::get('/kitchen-board/{station}', fn ($station) =>
+        view(
+            'livewire.restaurante.kitchen-board',
+            compact('station')
+        ))->name('kitchen.board');
 
     // 🔥 REPORTES
     Route::get('/reports', fn() => view('reports'))->name('reports');

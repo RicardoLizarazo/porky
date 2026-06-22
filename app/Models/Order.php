@@ -13,26 +13,128 @@ class Order extends Model
     */
 
     protected $fillable = [
+
+        /*
+        |--------------------------------------------------------------------------
+        | RELACIONES
+        |--------------------------------------------------------------------------
+        */
+
         'customer_id',
         'user_id',
         'delivery_user_id',
+
+        'location_id',
+        'floor_id',
+        'table_id',
+
+        'cash_register_id',
+        'cash_session_id',
+
         'type_id',
+        'sales_channel_id',
+        'service_type_id',
+
         'status_id',
+
+        /*
+        |--------------------------------------------------------------------------
+        | DOCUMENTOS / PAGOS
+        |--------------------------------------------------------------------------
+        */
+
+        'uuid',
+        'document_number',
+
         'payment_method',
+
+        'is_paid',
+        'paid_at',
+
+        /*
+        |--------------------------------------------------------------------------
+        | TOTALES
+        |--------------------------------------------------------------------------
+        */
+
         'total_items',
+
         'subtotal',
-        'total',
+        'tax',
+        'discount',
+
         'delivery_cost',
         'packaging_total',
+        'tip',
+
+        'total',
+
+        /*
+        |--------------------------------------------------------------------------
+        | OBSERVACIONES
+        |--------------------------------------------------------------------------
+        */
+
         'indication',
         'comment',
+
+        /*
+        |--------------------------------------------------------------------------
+        | FECHAS
+        |--------------------------------------------------------------------------
+        */
+
         'ordered_at',
+        'closed_at',
+    ];
+
+    protected $attributes = [
+        'subtotal' => 0,
+        'tax' => 0,
+        'discount' => 0,
+        'delivery_cost' => 0,
+        'packaging_total' => 0,
+        'tip' => 0,
+        'total' => 0,
+
+        'total_items' => 0,
+
+        'is_paid' => false,
     ];
 
     protected $casts = [
+
+        /*
+        |--------------------------------------------------------------------------
+        | BOOLEANOS
+        |--------------------------------------------------------------------------
+        */
+
+        'is_paid' => 'boolean',
+
+        /*
+        |--------------------------------------------------------------------------
+        | FECHAS
+        |--------------------------------------------------------------------------
+        */
+
         'ordered_at' => 'datetime',
-        'subtotal'   => 'decimal:2',
-        'total'      => 'decimal:2',
+        'paid_at'    => 'datetime',
+        'closed_at'  => 'datetime',
+
+        /*
+        |--------------------------------------------------------------------------
+        | DECIMALES
+        |--------------------------------------------------------------------------
+        */
+
+        'subtotal'        => 'decimal:2',
+        'tax'             => 'decimal:2',
+        'discount'        => 'decimal:2',
+        'delivery_cost'   => 'decimal:2',
+        'packaging_total' => 'decimal:2',
+        'tip'             => 'decimal:2',
+        'total'           => 'decimal:2',
     ];
 
     /*
@@ -53,10 +155,52 @@ class Order extends Model
         return $this->belongsTo(User::class);
     }
 
-    // 🔥 Domiciliario asignado
+    // Domiciliario asignado
     public function delivery()
     {
         return $this->belongsTo(User::class, 'delivery_user_id');
+    }
+
+    // Sede
+    public function location()
+    {
+        return $this->belongsTo(Location::class);
+    }
+
+    // Piso
+    public function floor()
+    {
+        return $this->belongsTo(Floor::class);
+    }
+
+    // Mesa
+    public function diningTable()
+    {
+        return $this->belongsTo(DiningTable::class, 'table_id');
+    }
+
+    // Caja
+    public function cashRegister()
+    {
+        return $this->belongsTo(CashRegister::class);
+    }
+
+    // Sesión de caja
+    public function cashSession()
+    {
+        return $this->belongsTo(CashSession::class);
+    }
+
+    // Canal de venta
+    public function salesChannel()
+    {
+        return $this->belongsTo(SalesChannel::class);
+    }
+
+    // Tipo de servicio
+    public function serviceType()
+    {
+        return $this->belongsTo(ServiceType::class);
     }
 
     // Detalles del pedido
@@ -79,24 +223,52 @@ class Order extends Model
 
     /*
     |--------------------------------------------------------------------------
-    | SCOPES (consultas reutilizables)
+    | SCOPES
     |--------------------------------------------------------------------------
     */
 
     public function scopeSearch($query, $term)
     {
-        if (!$term) return $query;
+        if (!$term) {
+            return $query;
+        }
 
-        return $query->whereHas('customer', function ($q) use ($term) {
-            $q->where('name', 'like', "%$term%");
+        return $query->where(function ($q) use ($term) {
+
+            $q->where('document_number', 'like', "%{$term}%")
+
+                ->orWhereHas('customer', function ($customer) use ($term) {
+                    $customer->where('name', 'like', "%{$term}%");
+                });
         });
     }
 
     public function scopeStatus($query, $statusId)
     {
-        if (!$statusId) return $query;
+        if (!$statusId) {
+            return $query;
+        }
 
         return $query->where('status_id', $statusId);
+    }
+
+    public function scopeLocation($query, $locationId)
+    {
+        if (!$locationId) {
+            return $query;
+        }
+
+        return $query->where('location_id', $locationId);
+    }
+
+    public function scopePendingPayment($query)
+    {
+        return $query->where('is_paid', false);
+    }
+
+    public function scopePaid($query)
+    {
+        return $query->where('is_paid', true);
     }
 
     public function scopeNew($query)
@@ -106,26 +278,63 @@ class Order extends Model
         });
     }
 
+    /*
+    |--------------------------------------------------------------------------
+    | NEW QUERY
+    |--------------------------------------------------------------------------
+    */
+
     public function newQuery()
     {
         $query = parent::newQuery();
 
         $query->select([
+
             'orders.id',
+            'orders.uuid',
+
             'orders.customer_id',
             'orders.user_id',
             'orders.delivery_user_id',
+
+            'orders.location_id',
+            'orders.floor_id',
+            'orders.table_id',
+
+            'orders.cash_register_id',
+            'orders.cash_session_id',
+
             'orders.type_id',
+            'orders.sales_channel_id',
+            'orders.service_type_id',
+
             'orders.status_id',
+
+            'orders.document_number',
+
             'orders.payment_method',
+
+            'orders.is_paid',
+            'orders.paid_at',
+
             'orders.total_items',
+
             'orders.subtotal',
-            'orders.total',
+            'orders.tax',
+            'orders.discount',
+
             'orders.delivery_cost',
             'orders.packaging_total',
+            'orders.tip',
+
+            'orders.total',
+
             'orders.indication',
             'orders.comment',
+
             'orders.ordered_at',
+            'orders.closed_at',
+
             'orders.created_at',
             'orders.updated_at',
         ]);
@@ -135,7 +344,7 @@ class Order extends Model
 
     /*
     |--------------------------------------------------------------------------
-    | ACCESORES (helpers)
+    | ACCESORES
     |--------------------------------------------------------------------------
     */
 
@@ -145,7 +354,7 @@ class Order extends Model
         return number_format($this->total, 2);
     }
 
-    // Estado con color (útil para badges)
+    // Estado con color
     public function getStatusBadgeAttribute()
     {
         return [
@@ -158,5 +367,13 @@ class Order extends Model
     public function getDeliveryNameAttribute()
     {
         return $this->delivery?->name ?? 'Sin asignar';
+    }
+
+    // Estado pago
+    public function getPaymentStatusAttribute()
+    {
+        return $this->is_paid
+            ? 'Pagado'
+            : 'Pendiente';
     }
 }

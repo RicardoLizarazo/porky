@@ -17,6 +17,7 @@ class Product extends Model
         'description',
         'image',
         'packaging_cost',
+        'allow_manual_price',
         'is_visible',
         'is_active',
     ];
@@ -24,6 +25,7 @@ class Product extends Model
     protected $casts = [
         'price' => 'float',
         'packaging_cost' => 'float',
+        'allow_manual_price' => 'boolean',
         'is_visible' => 'boolean',
         'is_active' => 'boolean',
     ];
@@ -52,6 +54,13 @@ class Product extends Model
     public function orderDetails()
     {
         return $this->hasMany(OrderDetail::class);
+    }
+
+    public function rules()
+    {
+        return $this->belongsToMany(ProductRule::class,
+            'product_rule_product'
+        );
     }
 
     /*
@@ -140,6 +149,7 @@ class Product extends Model
             'products.description',
             'products.image',
             'products.packaging_cost',
+            'products.allow_manual_price',
             'products.is_visible',
             'products.is_active',
             'products.created_at',

@@ -44,126 +44,247 @@
     </div>
 </div>
 @push('script')
-    <script>
-        document.addEventListener('livewire:init', () => {
-            Livewire.on('open-create-modal', () => {
-                window.dispatchEvent(new CustomEvent('toggle-loading', { detail: false }));
-                $("#modal-create").modal();
-            });
 
-            Livewire.on('store', () => {
-            	$('#modal-create').modal('hide');
+<script>
+
+document.addEventListener('livewire:init', () => {
+
+    /* =========================================================
+    MODAL CREATE
+    ========================================================= */
+
+    Livewire.on('open-create-modal', () => {
+
+        window.dispatchEvent(
+            new CustomEvent('toggle-loading', {
+                detail: false
+            })
+        );
+
+        $('#modal-create').modal('show');
+
+        setTimeout(() => {
+            initAutocomplete();
+        }, 500);
+
+    });
+
+
+    /* =========================================================
+    MODAL EDIT
+    ========================================================= */
+
+    Livewire.on('open-edit-modal', () => {
+
+        window.dispatchEvent(
+            new CustomEvent('toggle-loading', {
+                detail: false
+            })
+        );
+
+        $('#modal-edit').modal('show');
+
+        setTimeout(() => {
+            initAutocomplete();
+        }, 500);
+
+    });
+
+
+    /* =========================================================
+    STORE
+    ========================================================= */
+
+    Livewire.on('store', () => {
+
+        $('#modal-create').modal('hide');
+
+        Swal.fire({
+            icon: 'success',
+            title: 'Registro creado correctamente',
+            showConfirmButton: false,
+            timer: 1500
+        });
+
+    });
+
+
+    /* =========================================================
+    UPDATE
+    ========================================================= */
+
+    Livewire.on('update', () => {
+
+        $('#modal-edit').modal('hide');
+
+        Swal.fire({
+            icon: 'success',
+            title: 'Registro actualizado correctamente',
+            showConfirmButton: false,
+            timer: 1500
+        });
+
+    });
+
+
+    /* =========================================================
+    DELETE
+    ========================================================= */
+
+    Livewire.on('delete', id => {
+
+        Swal.fire({
+            title: '¿Está seguro de eliminar el registro?',
+            text: 'No podrás revertir esto',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Sí',
+            cancelButtonText: 'No'
+        }).then((result) => {
+
+            if (result.isConfirmed) {
+
+                @this.call('delete', id);
+
                 Swal.fire({
-                  icon: 'success',
-                  title: 'Registro creado correctamente',
-                  showConfirmButton: false,
-                  timer: 1500
-                })
-            });
-
-            Livewire.on('open-edit-modal', () => {
-                window.dispatchEvent(new CustomEvent('toggle-loading', { detail: false }));
-                $("#modal-edit").modal();
-            });
-
-            Livewire.on('update', () => {
-            	$('#modal-edit').modal('hide');
-                Swal.fire({
-                  icon: 'success',
-                  title: 'Registro actualizado correctamente',
-                  showConfirmButton: false,
-                  timer: 1500
-                })
-            });
-
-            Livewire.on('delete', id =>{
-                Swal.fire({
-                  title: 'Esta seguro de eliminar el registro?',
-                  text: "¡No podrás revertir esto!",
-                  icon: 'warning',
-                  showCancelButton: true,
-                  confirmButtonColor: '#3085d6',
-                  cancelButtonColor: '#d33',
-                  confirmButtonText: 'Si',
-                  cancelButtonText: 'No'
-                }).then((result) => {
-                  if (result.isConfirmed) {
-                  	@this.call('delete', id)
-                    Swal.fire({
-                        title: 'Eliminado',
-                        text: 'El registro ha sido eliminado',
-                        icon: 'success',
-                        showConfirmButton: false,
-                        timer: 1500
-                    })
-                  }
-                })
-            });
-        });     
-    </script>
-
-    {{-- GOOGLE --}}
-    <script src="https://maps.googleapis.com/maps/api/js?key=TU_API_KEY&libraries=places"></script>
-
-    <script>
-        document.addEventListener('livewire:init', () => {
-
-            Livewire.on('open-create-modal', () => {
-                window.dispatchEvent(new CustomEvent('toggle-loading', { detail: false }));
-                $("#modal-create").modal();
-
-                setTimeout(() => initAutocomplete(), 500);
-            });
-
-            Livewire.on('store', () => {
-                $('#modal-create').modal('hide');
-
-                Swal.fire({
+                    title: 'Eliminado',
+                    text: 'El registro ha sido eliminado',
                     icon: 'success',
-                    title: 'Registro creado correctamente',
                     showConfirmButton: false,
                     timer: 1500
                 });
-            });
+
+            }
 
         });
 
-        /* =========================
-        GOOGLE AUTOCOMPLETE
-        ========================= */
-        function initAutocomplete() {
+    });
 
-            document.querySelectorAll('.address-input').forEach((input) => {
+});
 
-                if (input.dataset.initialized) return;
 
-                const index = input.dataset.index;
+/* =========================================================
+GOOGLE AUTOCOMPLETE
+========================================================= */
 
-                const autocomplete = new google.maps.places.Autocomplete(input, {
-                    componentRestrictions: { country: "CO" },
-                });
+window.initAutocomplete = function () {
 
-                autocomplete.addListener('place_changed', function () {
+    document.querySelectorAll('.address-input').forEach((input) => {
 
-                    const place = autocomplete.getPlace();
-
-                    if (!place.geometry) {
-                        alert("Dirección no válida");
-                        return;
-                    }
-
-                    const component = Livewire.find(
-                        input.closest('[wire\\:id]').getAttribute('wire:id')
-                    );
-
-                    component.set(`addresses.${index}.address`, place.formatted_address);
-                    component.set(`addresses.${index}.latitude`, place.geometry.location.lat());
-                    component.set(`addresses.${index}.longitude`, place.geometry.location.lng());
-
-                });
-
-                input.dataset.initialized = true;
-            });
+        // evitar doble inicialización
+        if (input.dataset.initialized === 'true') {
+            return;
         }
-    </script>
+
+        const index = input.dataset.index;
+
+        const autocomplete = new google.maps.places.Autocomplete(input, {
+
+            componentRestrictions: {
+                country: 'CO'
+            },
+
+            fields: [
+                'formatted_address',
+                'geometry',
+                'name'
+            ],
+
+            types: ['address']
+
+        });
+
+
+        autocomplete.addListener('place_changed', () => {
+
+            const place = autocomplete.getPlace();
+
+            // validar dirección
+            if (!place.geometry || !place.geometry.location) {
+
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Dirección inválida',
+                    text: 'Selecciona una dirección sugerida por Google'
+                });
+
+                return;
+            }
+
+            // obtener componente livewire
+            const componentElement = input.closest('[wire\\:id]');
+
+            if (!componentElement) {
+                return;
+            }
+
+            const component = Livewire.find(
+                componentElement.getAttribute('wire:id')
+            );
+
+            if (!component) {
+                return;
+            }
+
+            // actualizar dirección
+            component.set(
+                `addresses.${index}.address`,
+                place.formatted_address
+            );
+
+            // actualizar latitud
+            component.set(
+                `addresses.${index}.latitude`,
+                place.geometry.location.lat()
+            );
+
+            // actualizar longitud
+            component.set(
+                `addresses.${index}.longitude`,
+                place.geometry.location.lng()
+            );
+
+        });
+
+        // marcar como inicializado
+        input.dataset.initialized = 'true';
+
+    });
+
+};
+
+
+/* =========================================================
+REINICIALIZAR AUTOCOMPLETE
+========================================================= */
+
+document.addEventListener('livewire:navigated', () => {
+
+    setTimeout(() => {
+        initAutocomplete();
+    }, 500);
+
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+
+    setTimeout(() => {
+        initAutocomplete();
+    }, 500);
+
+});
+
+</script>
+
+
+{{-- =========================================================
+GOOGLE MAPS API
+========================================================= --}}
+
+<script async defer
+src="https://maps.googleapis.com/maps/api/js?key={{ config('services.google.maps_key') }}&loading=async&libraries=places&callback=initAutocomplete">
+</script>
+
 @endpush

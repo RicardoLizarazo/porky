@@ -77,10 +77,10 @@
 
                             <div class="form-group">
                                 <input type="text"
-                                       class="form-control address-input"
-                                       data-index="{{ $index }}"
-                                       value="{{ $addr['address'] }}"
-                                       placeholder="Buscar dirección...">
+                                    class="form-control address-input"
+                                    data-index="{{ $index }}"
+                                    wire:model.defer="addresses.{{ $index }}.address"
+                                    placeholder="Buscar dirección...">
                             </div>
 
                             <div class="form-group">

@@ -5,15 +5,15 @@
             {{-- HEADER --}}
             <div class="modal-header">
                 <h4 class="modal-title">
-                    <i class="fas fa-user-plus mr-2"></i>
-                    Nuevo Cliente
+                    <i class="fas fa-user-edit mr-2"></i>
+                    Editar Cliente
                 </h4>
                 <button type="button" class="close" data-dismiss="modal">
                     <span>&times;</span>
                 </button>
             </div>
 
-            <form wire:submit.prevent="store">
+            <form wire:submit.prevent="update">
 
                 <div class="modal-body">
 
@@ -110,23 +110,33 @@
                         + Agregar dirección
                     </button>
 
-                    {{-- PASSWORD --}}
                     <hr>
+                    
+                    <h6 class="mb-3">
+                    Cambiar contraseña (Opcional)
+                    </h6>
 
                     <div class="row">
                         <div class="col-md-6">
-                            <label>Contraseña</label>
+                            <label>Nueva contraseña</label>
+
                             <input type="password"
-                                   class="form-control @error('password') is-invalid @enderror"
-                                   wire:model.defer="password">
-                            @error('password') <span class="invalid-feedback">{{ $message }}</span> @enderror
+                                class="form-control @error('password') is-invalid @enderror"
+                                wire:model.defer="password">
+
+                            @error('password')
+                                <span class="invalid-feedback">
+                                    {{ $message }}
+                                </span>
+                            @enderror
                         </div>
 
                         <div class="col-md-6">
-                            <label>Confirmar</label>
+                            <label>Confirmar contraseña</label>
+
                             <input type="password"
-                                   class="form-control"
-                                   wire:model.defer="password_confirmation">
+                                class="form-control"
+                                wire:model.defer="password_confirmation">
                         </div>
                     </div>
 
@@ -134,7 +144,7 @@
 
                 <div class="modal-footer">
                     <button class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
-                    <button class="btn btn-primary">Guardar</button>
+                    <button class="btn btn-primary">Actualizar</button>
                 </div>
 
             </form>

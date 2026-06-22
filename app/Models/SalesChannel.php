@@ -3,23 +3,30 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 
-class Category extends Model
+class SalesChannel extends Model
 {
-    use HasFactory;
-
     protected $fillable = [
         'name',
-        'description',
+        'code',
         'is_active',
-        'is_visible',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
-        'is_visible' => 'boolean',
     ];
+
+    /*
+    |--------------------------------------------------------------------------
+    | CONSTANTES
+    |--------------------------------------------------------------------------
+    */
+
+    const WEB = 1;
+    const PHONE = 2;
+    const POS = 3;
+    const TAKE_AWAY = 4;
+    const RAPPI = 5;
 
     /*
     |--------------------------------------------------------------------------
@@ -27,26 +34,8 @@ class Category extends Model
     |--------------------------------------------------------------------------
     */
 
-    public function products()
+    public function orders()
     {
-        return $this->hasMany(Product::class);
-    }
-
-    public function kitchenStation()
-    {
-        return $this->belongsTo(
-            KitchenStation::class
-        );
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | SCOPES
-    |--------------------------------------------------------------------------
-    */
-
-    public function scopeActive($query)
-    {
-        return $query->where('is_active', true);
+        return $this->hasMany(Order::class);
     }
 }

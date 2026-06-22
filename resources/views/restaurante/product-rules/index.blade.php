@@ -18,13 +18,12 @@
 
     <div class="row">
         <div class="col-12">
-        	@include('restaurante.products.create')
-            @include('restaurante.products.rules')
-            @include('restaurante.products.edit')
+        	@include('restaurante.product-rules.create')
+            @include('restaurante.product-rules.edit')
             <div class="card">
                 <div class="card-header">
-                    <h3>Productos
-                    @can('products.create')
+                    <h3>Reglas de productos
+                    @can('product-rules.create')
                         <button @click="window.dispatchEvent(new CustomEvent('toggle-loading', { detail: true }));
                             $dispatch('create')"
                             class="btn btn-cef btn-cef-create"
@@ -38,7 +37,7 @@
                 </div>
 
                 <div class="card-body">
-                    <livewire:products-table theme="bootstrap-4" />
+                    <livewire:product-rules-table theme="bootstrap-4" />
                 </div>
             </div>        
         </div>
@@ -75,21 +74,6 @@
                   showConfirmButton: false,
                   timer: 1500
                 })
-            });
-
-            Livewire.on('open-rules-modal', () => {
-                window.dispatchEvent(new CustomEvent('toggle-loading', { detail: false }));
-                $('#modal-rules').modal();
-            });
-
-            Livewire.on('rules-saved', () => {
-                $('#modal-rules').modal('hide');
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Reglas actualizadas',
-                    showConfirmButton: false,
-                    timer: 1500
-                });
             });
 
             Livewire.on('delete', id =>{

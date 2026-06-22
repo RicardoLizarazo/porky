@@ -321,6 +321,12 @@ return [
             'icon' => 'fas fa-utensils',
         ],
         [
+            'text'=>'Mesas',
+            'url' =>'floor-map',
+            'icon' => 'fas fa-border-all',
+            'can' => 'floor_map.view',
+        ],
+        [
             'text' => 'Mis pedidos',
             'url'  => 'mis-pedidos',
             'icon' => 'fas fa-receipt',
@@ -348,11 +354,18 @@ return [
                     'active' => ['restaurante/locations*'], 
                 ],
                 [
-                    'text'=>'Productos',
-                    'url' =>'products',
-                    'icon' => 'fas fa-shopping-basket',
-                    'can' => 'products.view',
-                    'active' => ['restaurante/products*'], 
+                    'text'=>'Pisos',
+                    'url' =>'floors',
+                    'icon' => 'fas fa-layer-group',
+                    'can' => 'floors.view',
+                    'active' => ['restaurante/floors*'], 
+                ],
+                [
+                    'text'=>'Mesas',
+                    'url' =>'tables',
+                    'icon' => 'fas fa-chair',
+                    'can' => 'tables.view',
+                    'active' => ['restaurante/tables*'],
                 ],
                 [
                     'text'=>'Categorias',
@@ -360,6 +373,38 @@ return [
                     'icon' => 'fas fa-tags',
                     'can' => 'categories.view',
                     'active' => ['restaurante/categories*'], 
+                ],
+                [
+                    'text'=>'Productos',
+                    'url' =>'products',
+                    'icon' => 'fas fa-shopping-basket',
+                    'can' => 'products.view',
+                    'active' => ['restaurante/products*'], 
+                ],
+                [
+                    'text'=>'Reglas Productos',
+                    'url' =>'product-rules',
+                    'icon' => 'fas fa-random',
+                    'can' => 'product-rules.view',
+                ],
+            ],
+        ],
+        [
+            'text' => 'Cocina',
+            'url'  => '#',
+            'icon' => 'fas fa-fire',
+            'submenu' => [
+
+                [
+                    'text' => 'Monitor Cocina',
+                    'url'  => 'kitchen-board',
+                    'icon' => 'fas fa-tv',
+                ],
+
+                [
+                    'text' => 'Despacho',
+                    'url'  => 'kitchen-dispatch',
+                    'icon' => 'fas fa-check-circle',
                 ],
             ],
         ],

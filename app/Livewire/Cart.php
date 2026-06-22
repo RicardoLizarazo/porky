@@ -187,10 +187,17 @@ class Cart extends Component
                 // 🔥 TOTAL CORRECTO
                 $total = $subtotal + $packaging + $delivery;
 
+                // 🔥 Tipo de pedido
+                $typeId = 1; // Web
+
+                if (Auth::check() && Auth::user()->hasAnyRole(['Administrador', 'Consulta'])) {
+                    $typeId = 2; // Teléfono
+                }
+
                 $order = Order::create([
                     'customer_id'    => $customerId,
                     'user_id'        => Auth::id(),
-                    'type_id'        => 1,
+                    'type_id'        => $typeId,
                     'status_id'      => 1,
                     'payment_method' => 'Efectivo',
                     'total_items'    => $totalItems,

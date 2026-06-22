@@ -35,9 +35,15 @@ class Location extends Model
             ->withTimestamps();
     }
 
-    public function carts()
+        /*
+    |--------------------------------------------------------------------------
+    | SCOPES
+    |--------------------------------------------------------------------------
+    */
+
+    public function scopeActive($query)
     {
-        return $this->hasMany(Cart::class);
+        return $query->where('is_active', true);
     }
 
     /*
@@ -54,7 +60,6 @@ class Location extends Model
 
         $now = Carbon::now();
 
-        // 👇 IMPORTANTE: mismo formato que tu JSON
         $day = strtolower($now->format('l')); // monday, tuesday...
 
         $daySchedule = $this->schedule[$day] ?? null;
