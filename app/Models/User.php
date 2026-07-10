@@ -68,6 +68,49 @@ class User extends Authenticatable
             ->implode('');
     }
 
+    public function responsibleCashRegisters()
+    {
+        return $this->hasMany(CashRegister::class,'responsible_user_id');
+    }
+
+    public function cashSessions()
+    {
+        return $this->hasMany(
+            CashSession::class
+        );
+    }
+
+    public function openCashSession()
+    {
+        return $this->hasOne(
+            CashSession::class,
+            'user_id'
+        )->where('is_open', true);
+    }
+
+    public function openedCashSessions()
+    {
+        return $this->hasMany(
+            CashSession::class,
+            'opened_by'
+        );
+    }
+
+    public function closedCashSessions()
+    {
+        return $this->hasMany(
+            CashSession::class,
+            'closed_by'
+        );
+    }
+
+    public function cashPayments()
+    {
+        return $this->hasMany(
+            CashPayment::class
+        );
+    }
+
     /* ============================================================
      * = AUDITORÍA SPATIE
      * ============================================================

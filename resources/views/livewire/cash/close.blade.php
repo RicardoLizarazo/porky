@@ -1,6 +1,6 @@
 @extends('adminlte::page')
 
-@section('title', 'Cajas')
+@section('title', 'Cierre de Caja')
 
 @section('content_header')
 <div class="container-fluid">
@@ -9,7 +9,7 @@
         <div class="col-sm-6">
             <h1 class="m-0 text-dark">
                 <i class="fas fa-cash-register mr-2"></i>
-                Gestión de Cajas
+                Cierre de Cajas
             </h1>
         </div>
     </div> 
@@ -17,22 +17,9 @@
 @stop
 
 @section('content')
-
-    <livewire:cash-registers />
-
-@stop
-
-@section('footer')
-<div class="text-center small text-muted">
-    <strong>Piqueteadero Porky de la 105</strong>
-    — v2.0.0
-</div>
+    <livewire:cash.close-cash />
 @stop
 
 @section('css')
     @vite(['resources/css/app.css'])
-@stop
-
-@section('js')
-    @stack('script')
 @stop

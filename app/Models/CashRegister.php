@@ -15,6 +15,7 @@ class CashRegister extends Model
     protected $fillable = [
         'location_id',
         'floor_id',
+        'responsible_user_id',
         'name',
         'is_active',
     ];
@@ -47,6 +48,11 @@ class CashRegister extends Model
     public function orders()
     {
         return $this->hasMany(Order::class);
+    }
+
+    public function responsible()
+    {
+        return $this->belongsTo(User::class, 'responsible_user_id');
     }
 
     /*

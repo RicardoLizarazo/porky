@@ -388,40 +388,51 @@ class PosOrder extends Component
     | RENDER
     |--------------------------------------------------------------------------
     */
-
     public function render()
     {
-        $products = Product::query()
+        $user = auth()->user();
+        $isAdmin = $user && $user->hasAnyRole(['Administrador', 'Mesero', 'Cajero']);
 
-            ->with('category')
-
+        // 🧭 CATEGORÍAS
+        $categories = Category::query()
             ->where('is_active', true)
+            ->when(
+                !$isAdmin,
+                fn ($q) => $q->where('is_visible', true)
+            )
+            ->orderBy('name')
+            ->get();
 
+        // 🍔 PRODUCTOS
+        $products = Product::query()
+            ->with('category')
+            ->where('is_active', true)
+            // 🔐 Visibilidad por rol
+            ->when(
+                !$isAdmin,
+                fn ($q) => $q->where('is_visible', true)
+            )
+            // 🔗 Asegura coherencia con categoría
+            ->whereHas('category', function ($q) use ($isAdmin) {
+                $q->where('is_active', true);
+                if (!$isAdmin) {
+                    $q->where('is_visible', true);
+                }
+            })
+            // 🧭 Filtro por categoría
+            ->when($this->category_id, function ($query) {
+                $query->where('category_id', $this->category_id);
+            })
+            // 🔍 Búsqueda
             ->when($this->search, function ($query) {
-
                 $query->where('name', 'like', '%' . $this->search . '%');
             })
-
-            ->when($this->category_id, function ($query) {
-
-                $query->where(
-                    'category_id',
-                    $this->category_id
-                );
-            })
-
             ->orderBy('name')
-
             ->paginate(20);
 
         return view('restaurante.pos.index', [
-
             'products' => $products,
-
-            'categories' => Category::active()
-                ->where('is_visible', true)
-                ->orderBy('name')
-                ->get(),
+            'categories' => $categories,
         ]);
     }
 }

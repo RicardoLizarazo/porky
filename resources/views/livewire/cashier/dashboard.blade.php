@@ -1,15 +1,14 @@
 @extends('adminlte::page')
 
-@section('title', 'Cajas')
+@section('title', 'Caja')
 
 @section('content_header')
 <div class="container-fluid">
-
     <div class="row mb-2">
         <div class="col-sm-6">
             <h1 class="m-0 text-dark">
                 <i class="fas fa-cash-register mr-2"></i>
-                Gestión de Cajas
+                Dashboard
             </h1>
         </div>
     </div> 
@@ -17,16 +16,7 @@
 @stop
 
 @section('content')
-
-    <livewire:cash-registers />
-
-@stop
-
-@section('footer')
-<div class="text-center small text-muted">
-    <strong>Piqueteadero Porky de la 105</strong>
-    — v2.0.0
-</div>
+    <livewire:cashier-dashboard />
 @stop
 
 @section('css')

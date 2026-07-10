@@ -327,6 +327,45 @@ return [
             'can' => 'floor_map.view',
         ],
         [
+            'text' => 'Caja',
+            'icon' => 'fas fa-cash-register',
+            'can'  => 'cashier.open',
+
+            'submenu' => [
+
+                [
+                    'text'   => 'Apertura de Caja',
+                    'url'    => 'cash/open',
+                    'icon'   => 'fas fa-lock-open',
+                    'can'    => 'cashier.open',
+                    'active' => ['cash/open*'],
+                ],
+
+                [
+                    'text'   => 'Dashboard',
+                    'url'    => 'cashier',
+                    'icon'   => 'fas fa-desktop',
+                    'can'    => 'cashier.open',
+                    'active' => ['cashier'],
+                ],
+
+                [
+                    'text'   => 'Cobro de Mesas',
+                    'url'    => 'cashier/orders',
+                    'icon'   => 'fas fa-receipt',
+                    'can'    => 'cashier.charge',
+                    'active' => ['cashier/orders*'],
+                ],
+                [
+                    'text'   => 'Cerrar Caja',
+                    'url'    => 'cash/close',
+                    'icon'   => 'fas fa-lock',
+                    'can'    => 'cashier.open',
+                    'active' => ['cash/close*'],
+                ],
+            ],
+        ],
+        [
             'text' => 'Mis pedidos',
             'url'  => 'mis-pedidos',
             'icon' => 'fas fa-receipt',
@@ -366,6 +405,13 @@ return [
                     'icon' => 'fas fa-chair',
                     'can' => 'tables.view',
                     'active' => ['restaurante/tables*'],
+                ],
+                [
+                    'text'   => 'Cajas',
+                    'url'    => 'cash-registers',
+                    'icon'   => 'fas fa-cash-register',
+                    'can'    => 'cash-registers.view',
+                    'active' => ['restaurante/cash-registers*'],
                 ],
                 [
                     'text'=>'Categorias',

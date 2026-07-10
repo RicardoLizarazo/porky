@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\OrderController;
+use App\Http\Controllers\CashCloseController;
 use App\Http\Controllers\Auth\CustomerAuthController;
 use App\Livewire\Reports\ReportsModule;
 
@@ -60,6 +61,7 @@ Auth::routes();
 Route::get('/orders/{order}/invoice', [OrderController::class, 'invoice'])->name('orders.invoice');
 Route::get('/orders/{order}/invoice-pdf', [OrderController::class, 'invoicePdf'])->name('orders.invoice.pdf');
 Route::get('/orders/{order}/ticket', [OrderController::class, 'ticket'])->name('orders.ticket');
+Route::get('/orders/{order}/tableTicket', [OrderController::class, 'tableTicket'])->name('orders.tableTicket');
 
 // Rutas protegidas (solo si hay sesión web activa)
 Route::middleware(['auth'])->group(function () {
@@ -70,9 +72,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/locations', fn() => view('livewire.locations'))->name('locations');
     Route::get('/floors', fn() => view('livewire.floors'))->name('floors');
     Route::get('/tables', fn() => view('livewire.tables'))->name('tables');
-    
     Route::get('/cash-registers', fn() => view('livewire.cash-registers'))->name('cash-registers');
-
     Route::get('/floor-map', fn() => view('livewire.floor-map'))->name('floor-map');
     Route::get('/categories', fn() => view('livewire.categories'))->name('categories');
     Route::get('/products', fn() => view('livewire.products'))->name('products');
@@ -86,6 +86,13 @@ Route::middleware(['auth'])->group(function () {
     })->name('pos.show');
 
     Route::get('/product-rules', fn() => view('livewire.product-rules'))->name('product-rules');
+
+    //POS
+    Route::get('/cash/open', fn() => view('livewire.cash.open'))->name('cash.open');
+    Route::get('/cashier', fn() => view('livewire.cashier.dashboard'))->name('cashier.dashboard');
+    Route::get('/cashier/orders', fn() => view('livewire.cashier-orders'))->name('cash.orders');
+    Route::get('/cash/close', fn() => view('livewire.cash.close'))->name('cash.close');
+    Route::get('cash/close/{cashSession}/print', [CashCloseController::class, 'print'])->name('cash.close.print')->middleware('auth');
 
     // COCINA
     //Route::get('/kitchen-board', fn() => view('livewire.restaurante.kitchen-board'))->name('kitchen.board');

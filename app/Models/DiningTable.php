@@ -140,7 +140,7 @@ class DiningTable extends Model
         |--------------------------------------------------------------------------
         */
 
-        if ($this->waiter_id === $user->id) {
+        if ((int) $this->waiter_id === (int) $user->id) {
             return true;
         }
 

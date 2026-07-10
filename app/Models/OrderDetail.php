@@ -56,4 +56,10 @@ class OrderDetail extends Model
     {
         return number_format($this->subtotal, 2);
     }
+
+    public function getTotalAttribute()
+    {
+        return $this->subtotal
+            ?? ($this->price * $this->quantity);
+    }
 }

@@ -34,4 +34,11 @@ class OrderController extends Controller
 
         return view('orders.ticket', compact('order'));
     }
+
+    public function tableTicket(Order $order)
+    {
+        $order->load(['details', 'diningTable.waiter', 'floor', 'user']);
+
+        return view('orders.ticket-table', compact('order'));
+    }
 }

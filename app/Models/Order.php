@@ -221,6 +221,27 @@ class Order extends Model
         return $this->belongsTo(TypeOrder::class);
     }
 
+    // Pagos
+    public function payments()
+    {
+        return $this->hasMany(
+            CashPayment::class
+        );
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | FACTURA ELECTRÓNICA
+    |--------------------------------------------------------------------------
+    */
+
+    public function invoice()
+    {
+        return $this->hasOne(
+            OrderInvoice::class
+        );
+    }
+
     /*
     |--------------------------------------------------------------------------
     | SCOPES
@@ -375,5 +396,10 @@ class Order extends Model
         return $this->is_paid
             ? 'Pagado'
             : 'Pendiente';
+    }
+
+    public function getRequiresInvoiceAttribute()
+    {
+        return (bool) $this->invoice_requested;
     }
 }
