@@ -11,7 +11,7 @@
 
 @section('content')
 
-    <livewire:restaurante.kitchen-dispatch />
+    <livewire:restaurante.kitchen-dispatch :station="$station"/>
 
 @stop
 

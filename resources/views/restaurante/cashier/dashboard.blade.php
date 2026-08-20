@@ -1,115 +1,34 @@
 <div class="container-fluid">
 
-    @if(!$session)
+    @if($sessions->isEmpty())
 
         <livewire:cash.open-cash />
 
     @else
 
-        {{-- INFORMACIÓN DE LA CAJA --}}
+        @if($sessions->count() > 1)
 
-        <div class="row">
+            {{-- RESUMEN CONSOLIDADO DE TODAS LAS CAJAS ABIERTAS --}}
 
-            <div class="col-md-12">
+            <div class="row">
 
-                <div class="card card-success">
+                <div class="col-md-12">
 
-                    <div class="card-header">
+                    <div class="alert alert-success d-flex justify-content-between align-items-center flex-wrap mb-4">
 
-                        <h3 class="card-title">
-
-                            <i class="fas fa-cash-register mr-2"></i>
-
-                            Caja Operativa
-
-                        </h3>
-
-                    </div>
-
-                    <div class="card-body">
-
-                        <div class="row">
-
-                            <div class="col-md-3">
-
-                                <strong>Caja</strong>
-
-                                <br>
-
-                                {{ $session->cashRegister->name }}
-
-                            </div>
-
-                            <div class="col-md-3">
-
-                                <strong>Sede</strong>
-
-                                <br>
-
-                                {{ $session->cashRegister->location?->name }}
-
-                            </div>
-
-                            <div class="col-md-3">
-
-                                <strong>Piso</strong>
-
-                                <br>
-
-                                {{ $session->cashRegister->floor?->name }}
-
-                            </div>
-
-                            <div class="col-md-3">
-
-                                <strong>Cajero</strong>
-
-                                <br>
-
-                                {{ $session->user?->name }}
-
-                            </div>
-
+                        <div>
+                            <strong>
+                                <i class="fas fa-cash-register mr-1"></i>
+                                Tienes {{ $sessions->count() }} cajas abiertas
+                            </strong>
+                            <span class="ml-2">
+                                ({{ $sessions->pluck('cashRegister.name')->filter()->implode(', ') }})
+                            </span>
                         </div>
 
-                        <hr>
-
-                        <div class="row">
-
-                            <div class="col-md-4">
-
-                                <strong>Apertura</strong>
-
-                                <br>
-
-                                {{ $session->opened_at?->format('d/m/Y h:i A') }}
-
-                            </div>
-
-                            <div class="col-md-4">
-
-                                <strong>Base Inicial</strong>
-
-                                <br>
-
-                                ${{ number_format($session->opening_amount,0,',','.') }}
-
-                            </div>
-
-                            <div class="col-md-4">
-
-                                <strong>Estado</strong>
-
-                                <br>
-
-                                <span class="badge badge-success">
-
-                                    ABIERTA
-
-                                </span>
-
-                            </div>
-
+                        <div>
+                            Ventas totales del turno:
+                            <strong>${{ number_format($this->totalSales,0,',','.') }}</strong>
                         </div>
 
                     </div>
@@ -118,35 +37,165 @@
 
             </div>
 
-        </div>
+            <div class="row">
 
-        {{-- RESUMEN DEL TURNO --}}
+                <div class="col-md-3">
+                    <div class="info-box">
+                        <span class="info-box-icon bg-info"><i class="fas fa-receipt"></i></span>
+                        <div class="info-box-content">
+                            <span class="info-box-text">Ventas Totales</span>
+                            <span class="info-box-number">${{ number_format($this->totalSales,0,',','.') }}</span>
+                        </div>
+                    </div>
+                </div>
 
-        <div class="row">
+                <div class="col-md-3">
+                    <div class="info-box">
+                        <span class="info-box-icon bg-success"><i class="fas fa-money-bill-wave"></i></span>
+                        <div class="info-box-content">
+                            <span class="info-box-text">Efectivo Total</span>
+                            <span class="info-box-number">${{ number_format($this->totalCash,0,',','.') }}</span>
+                        </div>
+                    </div>
+                </div>
 
-            <div class="col-md-3">
+                <div class="col-md-3">
+                    <div class="info-box">
+                        <span class="info-box-icon bg-primary"><i class="fas fa-mobile-alt"></i></span>
+                        <div class="info-box-content">
+                            <span class="info-box-text">Pagos Digitales</span>
+                            <span class="info-box-number">${{ number_format($this->totalDigital,0,',','.') }}</span>
+                        </div>
+                    </div>
+                </div>
 
-                <div class="info-box">
+                <div class="col-md-3">
+                    <div class="info-box">
+                        <span class="info-box-icon bg-warning"><i class="fas fa-wallet"></i></span>
+                        <div class="info-box-content">
+                            <span class="info-box-text">Efectivo Esperado Total</span>
+                            <span class="info-box-number">${{ number_format($this->totalExpectedCash,0,',','.') }}</span>
+                        </div>
+                    </div>
+                </div>
 
-                    <span class="info-box-icon bg-info">
+            </div>
 
-                        <i class="fas fa-receipt"></i>
+            <hr class="mb-4">
 
-                    </span>
+        @endif
 
-                    <div class="info-box-content">
+        {{-- DETALLE POR CADA CAJA ABIERTA --}}
 
-                        <span class="info-box-text">
+        @foreach($sessions as $session)
 
-                            Ventas Turno
+            {{-- INFORMACIÓN DE LA CAJA --}}
 
-                        </span>
+            <div class="row">
 
-                        <span class="info-box-number">
+                <div class="col-md-12">
 
-                            ${{ number_format($session->sales_total,0,',','.') }}
+                    <div class="card card-success">
 
-                        </span>
+                        <div class="card-header">
+
+                            <h3 class="card-title">
+
+                                <i class="fas fa-cash-register mr-2"></i>
+
+                                Caja Operativa — {{ $session->cashRegister->name }}
+
+                            </h3>
+
+                        </div>
+
+                        <div class="card-body">
+
+                            <div class="row">
+
+                                <div class="col-md-3">
+
+                                    <strong>Caja</strong>
+
+                                    <br>
+
+                                    {{ $session->cashRegister->name }}
+
+                                </div>
+
+                                <div class="col-md-3">
+
+                                    <strong>Sede</strong>
+
+                                    <br>
+
+                                    {{ $session->cashRegister->location?->name }}
+
+                                </div>
+
+                                <div class="col-md-3">
+
+                                    <strong>Piso</strong>
+
+                                    <br>
+
+                                    {{ $session->cashRegister->floor?->name }}
+
+                                </div>
+
+                                <div class="col-md-3">
+
+                                    <strong>Cajero</strong>
+
+                                    <br>
+
+                                    {{ $session->user?->name }}
+
+                                </div>
+
+                            </div>
+
+                            <hr>
+
+                            <div class="row">
+
+                                <div class="col-md-4">
+
+                                    <strong>Apertura</strong>
+
+                                    <br>
+
+                                    {{ $session->opened_at?->format('d/m/Y h:i A') }}
+
+                                </div>
+
+                                <div class="col-md-4">
+
+                                    <strong>Base Inicial</strong>
+
+                                    <br>
+
+                                    ${{ number_format($session->opening_amount,0,',','.') }}
+
+                                </div>
+
+                                <div class="col-md-4">
+
+                                    <strong>Estado</strong>
+
+                                    <br>
+
+                                    <span class="badge badge-success">
+
+                                        ABIERTA
+
+                                    </span>
+
+                                </div>
+
+                            </div>
+
+                        </div>
 
                     </div>
 
@@ -154,29 +203,129 @@
 
             </div>
 
-            <div class="col-md-3">
+            {{-- RESUMEN DEL TURNO --}}
 
-                <div class="info-box">
+            <div class="row">
 
-                    <span class="info-box-icon bg-success">
+                <div class="col-md-3">
 
-                        <i class="fas fa-money-bill-wave"></i>
+                    <div class="info-box">
 
-                    </span>
+                        <span class="info-box-icon bg-info">
 
-                    <div class="info-box-content">
-
-                        <span class="info-box-text">
-
-                            Efectivo
+                            <i class="fas fa-receipt"></i>
 
                         </span>
 
-                        <span class="info-box-number">
+                        <div class="info-box-content">
 
-                            ${{ number_format($session->cash_total,0,',','.') }}
+                            <span class="info-box-text">
+
+                                Ventas Turno
+
+                            </span>
+
+                            <span class="info-box-number">
+
+                                ${{ number_format($session->sales_total,0,',','.') }}
+
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="col-md-3">
+
+                    <div class="info-box">
+
+                        <span class="info-box-icon bg-success">
+
+                            <i class="fas fa-money-bill-wave"></i>
 
                         </span>
+
+                        <div class="info-box-content">
+
+                            <span class="info-box-text">
+
+                                Efectivo
+
+                            </span>
+
+                            <span class="info-box-number">
+
+                                ${{ number_format($session->cash_total,0,',','.') }}
+
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="col-md-3">
+
+                    <div class="info-box">
+
+                        <span class="info-box-icon bg-primary">
+
+                            <i class="fas fa-mobile-alt"></i>
+
+                        </span>
+
+                        <div class="info-box-content">
+
+                            <span class="info-box-text">
+
+                                Pagos Digitales
+
+                            </span>
+
+                            <span class="info-box-number">
+
+                                ${{ number_format(
+                                    $session->nequi_total +
+                                    $session->daviplata_total +
+                                    $session->qr_total,
+                                0,',','.') }}
+
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="col-md-3">
+
+                    <div class="info-box">
+
+                        <span class="info-box-icon bg-warning">
+
+                            <i class="fas fa-wallet"></i>
+
+                        </span>
+
+                        <div class="info-box-content">
+
+                            <span class="info-box-text">
+
+                                Efectivo Esperado
+
+                            </span>
+
+                            <span class="info-box-number">
+
+                                ${{ number_format($session->expected_cash,0,',','.') }}
+
+                            </span>
+
+                        </div>
 
                     </div>
 
@@ -184,33 +333,133 @@
 
             </div>
 
-            <div class="col-md-3">
+            {{-- DETALLE POR MÉTODO DE PAGO --}}
 
-                <div class="info-box">
+            <div class="row">
 
-                    <span class="info-box-icon bg-primary">
+                <div class="col-md-8">
 
-                        <i class="fas fa-mobile-alt"></i>
+                    <div class="card">
 
-                    </span>
+                        <div class="card-header">
 
-                    <div class="info-box-content">
+                            <h3 class="card-title">
 
-                        <span class="info-box-text">
+                                Métodos de Pago
 
-                            Pagos Digitales
+                            </h3>
 
-                        </span>
+                        </div>
 
-                        <span class="info-box-number">
+                        <div class="card-body p-0">
 
-                            ${{ number_format(
-                                $session->nequi_total +
-                                $session->daviplata_total +
-                                $session->qr_total,
-                            0,',','.') }}
+                            <table class="table table-striped">
 
-                        </span>
+                                <thead>
+
+                                    <tr>
+
+                                        <th>Método</th>
+
+                                        <th class="text-right">Valor</th>
+
+                                    </tr>
+
+                                </thead>
+
+                                <tbody>
+
+                                    <tr>
+
+                                        <td>Efectivo</td>
+
+                                        <td class="text-right">
+
+                                            ${{ number_format($session->cash_total,0,',','.') }}
+
+                                        </td>
+
+                                    </tr>
+
+                                    <tr>
+
+                                        <td>Nequi</td>
+
+                                        <td class="text-right">
+
+                                            ${{ number_format($session->nequi_total,0,',','.') }}
+
+                                        </td>
+
+                                    </tr>
+
+                                    <tr>
+
+                                        <td>Daviplata</td>
+
+                                        <td class="text-right">
+
+                                            ${{ number_format($session->daviplata_total,0,',','.') }}
+
+                                        </td>
+
+                                    </tr>
+
+                                    <tr>
+
+                                        <td>QR</td>
+
+                                        <td class="text-right">
+
+                                            ${{ number_format($session->qr_total,0,',','.') }}
+
+                                        </td>
+
+                                    </tr>
+
+                                </tbody>
+
+                            </table>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="col-md-4">
+
+                    <div class="card">
+
+                        <div class="card-header">
+
+                            <h3 class="card-title">
+
+                                Indicadores
+
+                            </h3>
+
+                        </div>
+
+                        <div class="card-body">
+
+                            <p>
+
+                                <strong>Pedidos cobrados:</strong>
+
+                                {{ $session->orders_count }}
+
+                            </p>
+
+                            <p>
+
+                                <strong>Facturas solicitadas:</strong>
+
+                                {{ $session->invoices_requested }}
+
+                            </p>
+
+                        </div>
 
                     </div>
 
@@ -218,171 +467,11 @@
 
             </div>
 
-            <div class="col-md-3">
-
-                <div class="info-box">
-
-                    <span class="info-box-icon bg-warning">
-
-                        <i class="fas fa-wallet"></i>
-
-                    </span>
-
-                    <div class="info-box-content">
-
-                        <span class="info-box-text">
-
-                            Efectivo Esperado
-
-                        </span>
-
-                        <span class="info-box-number">
-
-                            ${{ number_format($session->expected_cash,0,',','.') }}
-
-                        </span>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-        </div>
-
-        {{-- DETALLE POR MÉTODO DE PAGO --}}
-
-        <div class="row">
-
-            <div class="col-md-8">
-
-                <div class="card">
-
-                    <div class="card-header">
-
-                        <h3 class="card-title">
-
-                            Métodos de Pago
-
-                        </h3>
-
-                    </div>
-
-                    <div class="card-body p-0">
-
-                        <table class="table table-striped">
-
-                            <thead>
-
-                                <tr>
-
-                                    <th>Método</th>
-
-                                    <th class="text-right">Valor</th>
-
-                                </tr>
-
-                            </thead>
-
-                            <tbody>
-
-                                <tr>
-
-                                    <td>Efectivo</td>
-
-                                    <td class="text-right">
-
-                                        ${{ number_format($session->cash_total,0,',','.') }}
-
-                                    </td>
-
-                                </tr>
-
-                                <tr>
-
-                                    <td>Nequi</td>
-
-                                    <td class="text-right">
-
-                                        ${{ number_format($session->nequi_total,0,',','.') }}
-
-                                    </td>
-
-                                </tr>
-
-                                <tr>
-
-                                    <td>Daviplata</td>
-
-                                    <td class="text-right">
-
-                                        ${{ number_format($session->daviplata_total,0,',','.') }}
-
-                                    </td>
-
-                                </tr>
-
-                                <tr>
-
-                                    <td>QR</td>
-
-                                    <td class="text-right">
-
-                                        ${{ number_format($session->qr_total,0,',','.') }}
-
-                                    </td>
-
-                                </tr>
-
-                            </tbody>
-
-                        </table>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-            <div class="col-md-4">
-
-                <div class="card">
-
-                    <div class="card-header">
-
-                        <h3 class="card-title">
-
-                            Indicadores
-
-                        </h3>
-
-                    </div>
-
-                    <div class="card-body">
-
-                        <p>
-
-                            <strong>Pedidos cobrados:</strong>
-
-                            {{ $session->orders_count }}
-
-                        </p>
-
-                        <p>
-
-                            <strong>Facturas solicitadas:</strong>
-
-                            {{ $session->invoices_requested }}
-
-                        </p>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-        </div>
+            @if(!$loop->last)
+                <hr class="my-4">
+            @endif
+
+        @endforeach
 
     @endif
 

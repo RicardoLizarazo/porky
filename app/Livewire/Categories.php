@@ -4,6 +4,7 @@ namespace App\Livewire;
 
 use Livewire\Component;
 use App\Models\Category;
+use App\Models\KitchenStation;
 use Livewire\Attributes\Validate;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\On;
@@ -25,6 +26,20 @@ class Categories extends Component
     #[Validate('boolean')]
     public $is_visible = true;
 
+    #[Validate('required|exists:kitchen_stations,id')]
+    public $kitchen_station_id;
+
+    public $kitchenStations = [];
+
+    public function mount()
+    {
+        $this->kitchenStations = KitchenStation::active()
+            ->orderBy('name')
+            ->get();
+
+        $this->kitchen_station_id = $this->kitchenStations->first()?->id;
+    }
+
     public function render()
     {
         return view('restaurante.categories.index');
@@ -32,7 +47,16 @@ class Categories extends Component
 
     public function resetInput()
     {
-        $this->reset(['name','description','is_active','is_visible']);
+        $this->reset([
+            'name',
+            'description',
+            'is_active',
+            'is_visible',
+            'kitchen_station_id'
+        ]);
+
+        $this->kitchen_station_id = $this->kitchenStations->first()?->id;
+
         $this->resetValidation();
     }
 
@@ -50,6 +74,7 @@ class Categories extends Component
         Category::create([
             'name' => $this->name,
             'description' => $this->description,
+            'kitchen_station_id' => $this->kitchen_station_id,
             'is_active' => (bool) $this->is_active,
             'is_visible' => (bool) $this->is_visible,
         ]);
@@ -66,6 +91,7 @@ class Categories extends Component
         $this->category_id = $id;
         $this->name = $category->name;
         $this->description = $category->description;
+        $this->kitchen_station_id = $category->kitchen_station_id;
         $this->is_active = (bool) $category->is_active;
         $this->is_visible = (bool) $category->is_visible;
 
@@ -79,6 +105,7 @@ class Categories extends Component
         Category::findOrFail($this->category_id)->update([
             'name' => $this->name,
             'description' => $this->description,
+            'kitchen_station_id' => $this->kitchen_station_id,
             'is_active' => (bool) $this->is_active,
             'is_visible' => (bool) $this->is_visible,
         ]);

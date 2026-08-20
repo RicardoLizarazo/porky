@@ -114,6 +114,44 @@
                             </div>
                         </div>
 
+<div class="col-md-6">
+                            <div class="form-group">
+                                <label>
+                                    Estación(es) de cocina
+                                </label>
+
+                                <div class="border rounded p-2 @error('kitchen_station_ids') is-invalid @enderror">
+
+                                    @forelse($kitchenStations as $id => $station)
+                                        <div class="custom-control custom-checkbox">
+                                            <input type="checkbox"
+                                                   class="custom-control-input"
+                                                   id="station_edit_{{ $id }}"
+                                                   value="{{ $id }}"
+                                                   wire:model.defer="kitchen_station_ids">
+                                            <label class="custom-control-label" for="station_edit_{{ $id }}">
+                                                {{ $station }}
+                                            </label>
+                                        </div>
+                                    @empty
+                                        <span class="text-muted small">No hay estaciones configuradas</span>
+                                    @endforelse
+
+                                </div>
+
+                                <small class="text-muted">
+                                    Un producto puede pertenecer a varias estaciones (ej. una picada que va a
+                                    Parrilla y a Picadas). Sin ninguna marcada, no aparecerá en el monitor de cocina.
+                                </small>
+
+                                @error('kitchen_station_ids')
+                                    <span class="invalid-feedback d-block">
+                                        {{ $message }}
+                                    </span>
+                                @enderror
+                            </div>
+                        </div>
+
                         {{-- PRECIO --}}
                         <div class="col-md-6">
                             <div class="form-group">
@@ -150,7 +188,8 @@
 
                     {{-- SWITCHES --}}
                     <div class="row">
-                        <div class="col-md-6">
+                    
+                        <div class="col-md-4">
                             <div class="custom-control custom-switch">
                                 <input type="checkbox"
                                        class="custom-control-input"
@@ -161,8 +200,8 @@
                                 </label>
                             </div>
                         </div>
-
-                        <div class="col-md-6">
+                    
+                        <div class="col-md-4">
                             <div class="custom-control custom-switch">
                                 <input type="checkbox"
                                        class="custom-control-input"
@@ -173,7 +212,22 @@
                                 </label>
                             </div>
                         </div>
-
+                    
+                        <div class="col-md-4">
+                            <div class="custom-control custom-switch">
+                                <input type="checkbox"
+                                       class="custom-control-input"
+                                       id="manual_price_create"
+                                       wire:model.defer="allow_manual_price">
+                                <label class="custom-control-label" for="manual_price_create">
+                                    Permitir cambiar precio
+                                </label>
+                                <small class="form-text text-muted">
+                                    Se podrá modificar el precio al agregar este producto al pedido.
+                                </small>
+                            </div>
+                        </div>
+                    
                     </div>
 
                 </div>

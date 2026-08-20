@@ -31,6 +31,7 @@ class Orders extends Component
     public $items = []; // 🔥 carrito interno
 
     public $customer_name;
+    public $customer_phone;
     public $customer_address;
     public $type_name;
     public $status_name;
@@ -127,6 +128,7 @@ class Orders extends Component
         $this->order_id = $order->id;
 
         $this->customer_name = $order->customer?->name;
+        $this->customer_phone = $order->customer?->telephone;
         $this->customer_address = $order->customer?->full_address;
 
         $this->type_name = $order->type?->name;

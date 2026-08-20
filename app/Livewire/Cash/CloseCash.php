@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\DB;
 
 class CloseCash extends Component
 {
+    public $session_id;
+
     public $session;
 
     public $counted_cash = 0;
@@ -31,7 +33,28 @@ class CloseCash extends Component
 
     public function mount()
     {
-        $this->session = CashSession::query()
+        $openSessions = $this->userOpenSessions();
+
+        // Si solo tiene una caja abierta, se entra directo al cierre (igual
+        // que antes). Si tiene varias (ej. Salón Principal, Salón Rojo,
+        // Salón Blanco), primero debe elegir cuál va a cerrar.
+        if ($openSessions->count() === 1) {
+
+            $this->selectSession(
+                $openSessions->first()->id
+            );
+        }
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | SELECCIÓN DE CAJA A CERRAR
+    |--------------------------------------------------------------------------
+    */
+
+    protected function userOpenSessions()
+    {
+        return CashSession::query()
 
             ->with([
                 'cashRegister.location',
@@ -43,12 +66,29 @@ class CloseCash extends Component
 
             ->where('user_id', auth()->id())
 
-            ->first();
+            ->get();
+    }
 
-        if ($this->session) {
+    public function selectSession($sessionId)
+    {
+        $this->session = $this->userOpenSessions()
+            ->firstWhere('id', $sessionId);
 
-            $this->counted_cash = $this->session->expected_cash;
-        }
+        $this->session_id = $this->session?->id;
+
+        $this->counted_cash = $this->session?->expected_cash ?? 0;
+
+        $this->closing_notes = '';
+    }
+
+    public function changeSession()
+    {
+        $this->reset([
+            'session',
+            'session_id',
+            'counted_cash',
+            'closing_notes',
+        ]);
     }
 
     /*
@@ -179,7 +219,29 @@ class CloseCash extends Component
             title: 'Caja cerrada correctamente.'
         );
 
-        return redirect()->route('cash.open');
+        // Si el usuario tiene otras cajas abiertas (ej. le falta cerrar el
+        // Salón Rojo y el Salón Blanco), lo devolvemos al selector en vez de
+        // sacarlo del flujo de cierre.
+        $remainingOpen = $this->userOpenSessions();
+
+        $this->reset([
+            'session',
+            'session_id',
+            'counted_cash',
+            'closing_notes',
+        ]);
+
+        if ($remainingOpen->isEmpty()) {
+
+            return redirect()->route('cash.open');
+        }
+
+        if ($remainingOpen->count() === 1) {
+
+            $this->selectSession(
+                $remainingOpen->first()->id
+            );
+        }
     }
 
     /*
@@ -232,6 +294,11 @@ class CloseCash extends Component
 
     public function render()
     {
-        return view('livewire.cash.close-cash');
+        return view(
+            'livewire.cash.close-cash',
+            [
+                'openSessions' => $this->userOpenSessions(),
+            ]
+        );
     }
 }

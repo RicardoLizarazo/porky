@@ -1,34 +1,106 @@
 @php
-    // Paleta de colores para IDENTIFICAR PISOS: tonos tierra/marrón/dorado de la
-    // marca Porky. A propósito NO usamos rojos (brand-primary/secondary) aquí,
-    // porque ese rojo ya está "ocupado" (literalmente) por el estado "Ocupada"
-    // de las mesas — si el piso también fuera rojo, las dos etiquetas se
-    // confundirían entre sí, como pasaba antes.
+    /*
+    |--------------------------------------------------------------------------
+    | PALETA DE COLORES PARA IDENTIFICAR PISOS
+    |--------------------------------------------------------------------------
+    | Cada piso tiene un color visualmente diferente.
+    |
+    | El rojo se evita deliberadamente porque está reservado para
+    | identificar mesas OCUPADAS.
+    |--------------------------------------------------------------------------
+    */
+
     $floorPalette = [
-        'var(--brand-success)', // marrón cálido
-        '#8d6e63',              // taupe / mocha
-        '#a9720b',              // dorado oscuro
-        '#4e342e',              // chocolate
-        '#795548',              // marrón medio
-        '#6d5300',              // mostaza oscuro
-        '#5d4037',              // marrón profundo
-        '#33261a',              // marrón casi negro
+        '#1565C0', // Azul
+        '#7B1FA2', // Morado
+        '#F9A825', // Dorado
+        '#00897B', // Turquesa
+        '#2E7D32', // Verde
+        '#EF6C00', // Naranja
+        '#3949AB', // Índigo
+        '#00838F', // Cian
     ];
 
-    // Ícono distinto por piso: como todos los colores son de la misma familia cálida,
-    // el ícono es el segundo identificador para que nunca dependa solo del matiz.
-    $floorIcons = ['fa-building', 'fa-door-open', 'fa-store', 'fa-umbrella-beach', 'fa-glass-martini-alt', 'fa-warehouse', 'fa-tree', 'fa-layer-group'];
+    /*
+    |--------------------------------------------------------------------------
+    | ÍCONOS DE LOS PISOS
+    |--------------------------------------------------------------------------
+    */
+
+    $floorIcons = [
+        'fa-building',
+        'fa-door-open',
+        'fa-store',
+        'fa-umbrella-beach',
+        'fa-glass-martini-alt',
+        'fa-warehouse',
+        'fa-tree',
+        'fa-layer-group',
+    ];
+
+    /*
+    |--------------------------------------------------------------------------
+    | ÍNDICE DEL PISO
+    |--------------------------------------------------------------------------
+    */
 
     $floorIndex = function ($floorId) use ($floors) {
-        $index = $floors->search(fn ($f) => $f->id == $floorId);
+
+        $index = $floors->search(
+            fn ($floor) => $floor->id == $floorId
+        );
+
         return $index === false ? 0 : $index;
     };
 
-    $floorColor = fn ($floorId) => $floorPalette[$floorIndex($floorId) % count($floorPalette)];
-    $floorIcon = fn ($floorId) => $floorIcons[$floorIndex($floorId) % count($floorIcons)];
+    /*
+    |--------------------------------------------------------------------------
+    | COLOR DEL PISO
+    |--------------------------------------------------------------------------
+    |
+    | Esta variable DEBE mantenerse porque el foreach de abajo
+    | utiliza $floorColor($floor->id).
+    |
+    |--------------------------------------------------------------------------
+    */
 
-    $selectedFloorModel = $floors->firstWhere('id', $selectedFloor);
+    $floorColor = function ($floorId) use (
+        $floorPalette,
+        $floorIndex
+    ) {
+        return $floorPalette[
+            $floorIndex($floorId) % count($floorPalette)
+        ];
+    };
+
+    /*
+    |--------------------------------------------------------------------------
+    | ÍCONO DEL PISO
+    |--------------------------------------------------------------------------
+    */
+
+    $floorIcon = function ($floorId) use (
+        $floorIcons,
+        $floorIndex
+    ) {
+        return $floorIcons[
+            $floorIndex($floorId) % count($floorIcons)
+        ];
+    };
+
+    /*
+    |--------------------------------------------------------------------------
+    | PISO SELECCIONADO
+    |--------------------------------------------------------------------------
+    */
+
+    $selectedFloorModel = $floors->firstWhere(
+        'id',
+        $selectedFloor
+    );
+
     $selectedColor = $floorColor($selectedFloor);
+
     $selectedIcon = $floorIcon($selectedFloor);
 @endphp
 
@@ -87,6 +159,14 @@
         <div class="status-legend-item"><span class="dot" style="background:#424242"></span> Pago</div>
     </div>
 
+    {{-- BANNER MODO UNIÓN --}}
+    @if($mergingTableId)
+        <div class="merge-mode-banner mb-4">
+            <span><i class="fas fa-link mr-2"></i> Selecciona la mesa que quieres unir</span>
+            <button type="button" wire:click="cancelMerge" class="btn btn-sm btn-light">Cancelar</button>
+        </div>
+    @endif
+
     {{-- GRID --}}
     <div class="row">
 
@@ -95,7 +175,11 @@
             <div class="col-6 col-lg-4 mb-3">
 
                 <div
-                    wire:click="openTable({{ $table->id }})"
+                    @if($mergingTableId && $mergingTableId != $table->id)
+                        wire:click="confirmMerge({{ $table->id }})"
+                    @else
+                        wire:click="openTable({{ $table->id }})"
+                    @endif
                     class="table-pos-card"
                     style="--floor-color: {{ $selectedColor }};"
                     @class([
@@ -104,6 +188,8 @@
                         'status-reserved' => $table->operationalStatus() === 'reserved',
                         'status-cleaning' => $table->operationalStatus() === 'cleaning',
                         'status-payment' => $table->operationalStatus() === 'pending_payment',
+                        'merge-origin' => $mergingTableId == $table->id,
+                        'merge-target-hint' => $mergingTableId && $mergingTableId != $table->id,
                     ])
                 >
 
@@ -114,6 +200,17 @@
                         {{ optional($selectedFloorModel)->name }}
                     </div>
 
+                    {{-- BADGE DE UNIÓN: solo aparece si esta mesa está unida a otra --}}
+                    @if($table->mergeAsPrimary)
+                        <div class="table-merge-badge">
+                            <i class="fas fa-link"></i> Unida con {{ $table->mergeAsPrimary->secondaryTable->name }}
+                        </div>
+                    @elseif($table->mergeAsSecondary)
+                        <div class="table-merge-badge">
+                            <i class="fas fa-link"></i> Unida con {{ $table->mergeAsSecondary->primaryTable->name }}
+                        </div>
+                    @endif
+
                     {{-- TOP --}}
                     <div class="d-flex justify-content-between align-items-start">
 
@@ -121,7 +218,26 @@
                             {{ $table->name }}
                         </div>
 
-                        <div class="table-status-circle"></div>
+                        <div class="d-flex align-items-center" style="gap:6px;">
+
+                            {{-- BOTÓN UNIR: solo si tiene permiso, la mesa tiene orden propia,
+                                 no está ya unida, y no estamos en medio de otra unión --}}
+                            @can('floor_map.merge_tables')
+                                @if($table->activeOrder && !$table->mergeAsPrimary && !$table->mergeAsSecondary && !$mergingTableId)
+                                    <button
+                                        type="button"
+                                        wire:click.stop="startMerge({{ $table->id }})"
+                                        class="table-merge-btn"
+                                        title="Unir mesa"
+                                    >
+                                        <i class="fas fa-link"></i>
+                                    </button>
+                                @endif
+                            @endcan
+
+                            <div class="table-status-circle"></div>
+
+                        </div>
 
                     </div>
 
@@ -332,6 +448,22 @@
 }
 
 /* =========================================================
+   MERGE MODE BANNER
+========================================================= */
+.merge-mode-banner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #e3f2fd;
+    border: 1px solid #90caf9;
+    color: #0d47a1;
+    font-weight: 700;
+    border-radius: 10px;
+    padding: 10px 16px;
+    font-size: .88rem;
+}
+
+/* =========================================================
    POS TABLE CARD
 ========================================================= */
 .table-pos-card {
@@ -353,6 +485,22 @@
 
 .table-pos-card:active {
     transform: scale(.98);
+}
+
+/* Mesa origen de la unión (la que ya elegiste) */
+.table-pos-card.merge-origin {
+    outline: 3px solid #1565C0;
+    outline-offset: 2px;
+}
+
+/* Mesas candidatas a recibir la unión: parpadeo suave para guiar el ojo */
+.table-pos-card.merge-target-hint {
+    animation: merge-pulse 1.2s infinite;
+}
+
+@keyframes merge-pulse {
+    0%, 100% { box-shadow: 0 8px 18px rgba(142,0,0,.08); }
+    50% { box-shadow: 0 0 0 4px rgba(21,101,192,.25); }
 }
 
 /* Franja superior = color de ESTADO (a la izquierda como acento fuerte) */
@@ -377,10 +525,47 @@
     border-radius: 20px;
     padding: 3px 10px;
     margin-bottom: 10px;
+    margin-right: 6px;
 }
 
 .table-floor-badge i {
     color: var(--floor-color);
+}
+
+/* Badge de unión */
+.table-merge-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: .66rem;
+    font-weight: 800;
+    color: #fff;
+    background: #37474f;
+    border-radius: 20px;
+    padding: 3px 10px;
+    margin-bottom: 10px;
+}
+
+/* Botón unir mesa (icono cadena, junto al círculo de estado) */
+.table-merge-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(0,0,0,.06);
+    color: #5a4a42;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: .72rem;
+    cursor: pointer;
+    transition: all .15s ease;
+    flex-shrink: 0;
+}
+
+.table-merge-btn:hover {
+    background: var(--floor-color);
+    color: #fff;
 }
 
 /* =========================================================
@@ -472,6 +657,7 @@
     .table-status-label { width: 100%; justify-content: center; }
     .active-floor-banner-count { display: none; }
     .status-legend { gap: 10px; padding: 8px 12px; }
+    .merge-mode-banner { font-size: .8rem; }
 }
 
 </style>
@@ -487,9 +673,22 @@ document.addEventListener('livewire:init', () => {
 
         Swal.fire({
             icon: 'warning',
-            title: 'Mesa ocupada',
+            title: event.title ?? 'Aviso',
             text: event.message,
             confirmButtonText: 'Entendido'
+        });
+
+    });
+
+    Livewire.on('show-success', (event) => {
+
+        Swal.fire({
+            icon: 'success',
+            title: '¡Listo!',
+            text: event.message,
+            confirmButtonText: 'Entendido',
+            timer: 2000,
+            showConfirmButton: false
         });
 
     });

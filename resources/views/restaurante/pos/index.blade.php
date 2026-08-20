@@ -1,4 +1,6 @@
 @php
+    // Misma paleta y misma lógica de color/ícono por piso que en el resto del sistema,
+    // basada en el ID del piso, para que se vea igual en mapa de mesas, caja y aquí.
     $floorPalette = [
         'var(--brand-success)', // marrón cálido
         '#8d6e63',              // taupe / mocha
@@ -16,9 +18,16 @@
     $fIcon = $floorIcons[((int) ($order->floor?->id ?? 0)) % count($floorIcons)];
 
     $cartCount = collect($cart)->sum('quantity');
+
+    $isVitrina = ($order->floor?->name ?? '') === 'Vitrina';
+    $vitrinaStation = null;
+
+    if ($isVitrina && preg_match('/(\d+)$/', $order->diningTable?->name ?? '', $m)) {
+        $vitrinaStation = $m[1];
+    }
 @endphp
 
-<div class="container-fluid px-2 px-md-3 pos-mesa-wrapper">
+<div class="container-fluid px-2 px-md-3 pos-mesa-wrapper" @if($isVitrina) wire:poll.5s="refreshOrderStatus" @endif>
 
     {{-- HEADER FIJO --}}
     <div class="pos-header sticky-top mb-3">
@@ -53,6 +62,31 @@
 
         </div>
 
+        @if($isVitrina && $vitrinaStation)
+            @if($order->is_paid)
+                <a
+                    href="{{ route('pos.vitrina', $vitrinaStation) }}"
+                    class="pos-new-client-btn"
+                >
+                    <i class="fas fa-user-plus"></i>
+                    Nuevo cliente
+                </a>
+            @else
+                <button
+                    type="button"
+                    class="pos-new-client-btn pos-new-client-btn-locked"
+                    onclick="Swal.fire({
+                        icon: 'info',
+                        title: 'Pedido pendiente de cobro',
+                        text: 'Esta estacion queda ocupada hasta que Caja Vitrina cobre este pedido.'
+                    })"
+                >
+                    <i class="fas fa-lock"></i>
+                    Esperando cobro
+                </button>
+            @endif
+        @endif
+
     </div>
 
     {{-- SEARCH --}}
@@ -61,7 +95,7 @@
             type="text"
             wire:model.live="search"
             class="form-control form-control-lg pos-search"
-            placeholder="🔍 Buscar producto..."
+            placeholder="Buscar producto..."
         >
     </div>
 
@@ -200,6 +234,29 @@
 </div>
 
 @push('css')
+
+@if($isVitrina)
+<style>
+/* =========================================================
+   MODO VITRINA: sin menú, pantalla completa para el picador
+========================================================= */
+.main-sidebar,
+.main-header,
+.control-sidebar {
+    display: none !important;
+}
+
+.content-wrapper,
+.wrapper {
+    margin-left: 0 !important;
+}
+
+.content-wrapper {
+    padding-top: 0 !important;
+}
+</style>
+@endif
+
 <style>
 
 /* =========================================================
@@ -295,6 +352,39 @@
     font-size: 1.5rem;
     font-weight: 800;
     color: var(--brand-primary-dark, #8e0000);
+}
+
+.pos-new-client-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 10px;
+    padding: 10px;
+    border-radius: 10px;
+    background: var(--brand-light-alt, #fbe9e7);
+    color: var(--brand-primary-dark, #8e0000);
+    font-weight: 800;
+    font-size: .88rem;
+    border: none;
+    width: 100%;
+}
+
+.pos-new-client-btn:hover {
+    background: var(--brand-border, #f1d2bd);
+    color: var(--brand-primary-dark, #8e0000);
+}
+
+.pos-new-client-btn-locked {
+    background: #f1f1f1;
+    color: #999;
+    border: none;
+    cursor: not-allowed;
+}
+
+.pos-new-client-btn-locked:hover {
+    background: #f1f1f1;
+    color: #999;
 }
 
 /* =========================================================
@@ -561,6 +651,15 @@
 }
 
 /* =========================================================
+   ESPACIO RESERVADO PARA LA BARRA FLOTANTE (móvil/tablet vertical)
+========================================================= */
+@media (max-width: 991.98px) {
+    .pos-mesa-wrapper {
+        padding-bottom: calc(90px + env(safe-area-inset-bottom, 0px));
+    }
+}
+
+/* =========================================================
    MOBILE FINE-TUNING
 ========================================================= */
 @media(max-width: 768px){
@@ -588,6 +687,24 @@
             if (drawer) {
                 drawer.classList.remove('open');
             }
+        });
+
+        Livewire.on('swal', (event) => {
+            const data = Array.isArray(event) ? event[0] : event;
+            Swal.fire({
+                icon: data.icon || 'info',
+                title: data.title || '',
+            });
+        });
+
+        Livewire.on('show-error', (event) => {
+            const data = Array.isArray(event) ? event[0] : event;
+            Swal.fire({
+                icon: 'error',
+                title: 'No autorizado',
+                text: data.message || 'Ocurrio un error.',
+                confirmButtonText: 'Entendido'
+            });
         });
     });
 </script>

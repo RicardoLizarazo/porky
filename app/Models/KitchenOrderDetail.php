@@ -15,7 +15,9 @@ class KitchenOrderDetail extends Model
         'quantity',
         'price',
         'subtotal',
-        'comment'
+        'comment',
+        'status',
+        'ready_at'
     ];
 
     public function kitchenOrder()

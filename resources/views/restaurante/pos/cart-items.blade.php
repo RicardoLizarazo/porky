@@ -1,46 +1,64 @@
 @forelse($cart as $item)
 
-    <div class="pos-cart-item border-bottom pb-3 mb-3">
+    @php
+        $sentToKitchen = in_array($item['id'], $sentToKitchenIds ?? []);
+    @endphp
+
+    <div class="pos-cart-item border-bottom pb-3 mb-3 {{ $sentToKitchen ? 'pos-cart-item-sent' : '' }}">
 
         <div class="d-flex justify-content-between">
 
             <div class="flex-grow-1 pr-2">
 
-                <strong class="d-block">
-                    {{ $item['product']['name'] }}
-                </strong>
+                <div class="d-flex align-items-center flex-wrap">
+                    <strong class="d-block mr-2">
+                        {{ $item['product']['name'] }}
+                    </strong>
+
+                    @if($sentToKitchen)
+                        <span class="badge-sent-kitchen">
+                            <i class="fas fa-check-circle"></i>
+                            Enviado a cocina
+                        </span>
+                    @endif
+                </div>
 
                 <div class="small text-muted">
                     x{{ $item['quantity'] }}
                 </div>
 
                 @if($item['product']['allow_manual_price'])
-
                     <div class="mt-2">
-
                         <small class="text-muted d-block mb-1">
                             Valor por porción
                         </small>
 
                         <input
-                            type="number"
-                            min="0"
-                            step="500"
-                            value="{{ $item['manual_price'] ?: $item['price'] }}"
-                            wire:change="updateManualPrice(
-                                {{ $item['id'] }},
-                                $event.target.value
-                            )"
-                            class="form-control form-control-sm pos-manual-price"
+                            type="text"
+                            inputmode="numeric"
+                            class="form-control form-control-sm pos-manual-price text-end"
+                            x-data="{
+                                display: new Intl.NumberFormat('es-CO').format(
+                                    {{ $item['manual_price'] ?: $item['price'] }}
+                                )
+                            }"
+                            x-model="display"
+                            @input="
+                                let clean = $event.target.value.replace(/\D/g, '');
+                                display = clean ? new Intl.NumberFormat('es-CO').format(clean) : '';
+                            "
+                            @change="
+                                let clean = $event.target.value.replace(/\D/g, '') || 0;
+                                $wire.updateManualPrice({{ $item['id'] }}, clean);
+                            "
                         >
-
                     </div>
-
                 @endif
 
                 @if($item['manual_price'])
                     <div class="small text-primary mt-1">
-                        💲 Ajustado:
+                        <i class="fas fa-tag mr-1"></i>
+                        Ajustado:
                         ${{ number_format($item['manual_price'], 0, ',', '.') }}
                     </div>
                 @endif
@@ -52,7 +70,8 @@
 
                 @if($packagingQty > 0)
                     <div class="small text-warning mt-1">
-                        🥡 {{ $packagingQty }}
+                        <i class="fas fa-box mr-1"></i>
+                        {{ $packagingQty }}
                         x
                         ${{ number_format($item['product']['packaging_cost'] ?? 0, 0, ',', '.') }}
                     </div>
@@ -71,6 +90,7 @@
                     <button
                         wire:click="removeProduct({{ $item['id'] }})"
                         class="btn-qty btn-qty-minus"
+                        @if($sentToKitchen) disabled title="Ya enviado a cocina, usa Quitar para autorizar" @endif
                     >
                         −
                     </button>
@@ -87,12 +107,23 @@
                     </button>
                 </div>
 
-                <button
-                    wire:click="deleteDetail({{ $item['id'] }})"
-                    class="btn-qty-delete mt-2"
-                >
-                    <i class="fas fa-trash-alt"></i> Quitar
-                </button>
+                {{-- QUITAR: directo si no se ha enviado, con autorización si ya se envió --}}
+                @if($sentToKitchen)
+                    <button
+                        type="button"
+                        onclick="confirmRemoveWithAuth({{ $item['id'] }})"
+                        class="btn-qty-delete btn-qty-delete-locked mt-2"
+                    >
+                        <i class="fas fa-lock"></i> Quitar
+                    </button>
+                @else
+                    <button
+                        wire:click="deleteDetail({{ $item['id'] }})"
+                        class="btn-qty-delete mt-2"
+                    >
+                        <i class="fas fa-trash-alt"></i> Quitar
+                    </button>
+                @endif
 
                 {{-- EMPAQUE --}}
                 @if(($item['product']['packaging_cost'] ?? 0) > 0)
@@ -110,7 +141,7 @@
                             </button>
 
                             <span class="pos-qty-value">
-                                🥡 {{ $packagingQty }}
+                                <i class="fas fa-box"></i> {{ $packagingQty }}
                             </span>
 
                             <button
@@ -166,6 +197,11 @@
     color: #fff;
 }
 
+.btn-qty[disabled] {
+    opacity: .35;
+    box-shadow: none;
+}
+
 .pos-qty-value {
     min-width: 26px;
     text-align: center;
@@ -182,9 +218,86 @@
     padding: 4px 6px;
 }
 
+.btn-qty-delete-locked {
+    color: #8e6a00;
+}
+
 .pos-manual-price {
     width: 130px;
     border-radius: 8px;
 }
+
+/* ---- Estado: enviado a cocina ---- */
+.pos-cart-item-sent {
+    background: rgba(67,160,71,.05);
+    border-radius: 10px;
+    padding: 10px;
+    margin-left: -10px;
+    margin-right: -10px;
+}
+
+.badge-sent-kitchen {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: .65rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .02em;
+    color: #2e7d32;
+    background: rgba(67,160,71,.14);
+    border-radius: 20px;
+    padding: 2px 8px;
+}
 </style>
+@endpush
+
+@push('script')
+<script>
+    function confirmRemoveWithAuth(itemId) {
+        Swal.fire({
+            title: 'Producto ya enviado a cocina',
+            html: `
+                <p class="text-muted small mb-2" style="text-align:left;">
+                    Este producto ya fue enviado a preparacion. Quitarlo requiere
+                    autorizacion de un Administrador.
+                </p>
+                <select id="remove-reason" class="swal2-select" style="display:block;width:100%;margin:0 0 10px;">
+                    <option value="">Selecciona un motivo</option>
+                    <option value="cliente_cancelo">Cliente cancelo</option>
+                    <option value="error_pedido">Error al tomar el pedido</option>
+                    <option value="producto_agotado">Producto agotado en cocina</option>
+                    <option value="otro">Otro motivo</option>
+                </select>
+                <input type="password" id="remove-password" class="swal2-input" placeholder="Contrasena de Administrador" style="margin:0;">
+            `,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Autorizar y quitar',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#c62828',
+            focusConfirm: false,
+            preConfirm: () => {
+                const reason = document.getElementById('remove-reason').value;
+                const password = document.getElementById('remove-password').value;
+
+                if (!reason) {
+                    Swal.showValidationMessage('Selecciona un motivo');
+                    return false;
+                }
+
+                if (!password) {
+                    Swal.showValidationMessage('Ingresa la contrasena');
+                    return false;
+                }
+
+                return { reason, password };
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                @this.removeProductSecure(itemId, result.value.password, result.value.reason);
+            }
+        });
+    }
+</script>
 @endpush

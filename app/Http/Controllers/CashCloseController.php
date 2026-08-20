@@ -24,7 +24,7 @@ class CashCloseController extends Controller
 
         return view(
 
-            'cash.print-close',
+            'livewire.cash.print-close',
 
             compact('cashSession')
 

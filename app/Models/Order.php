@@ -8,6 +8,20 @@ class Order extends Model
 {
     /*
     |--------------------------------------------------------------------------
+    | ESTADOS (status_orders.id)
+    |--------------------------------------------------------------------------
+    */
+
+    const STATUS_PENDING   = 1;
+    const STATUS_PREPARING = 2;
+    const STATUS_READY     = 3;
+    const STATUS_ON_ROUTE  = 4;
+    const STATUS_DELIVERED = 5;
+    const STATUS_CANCELLED = 6;
+    const STATUS_MERGED    = 7;
+
+    /*
+    |--------------------------------------------------------------------------
     | CONFIGURACIÓN
     |--------------------------------------------------------------------------
     */
@@ -228,6 +242,11 @@ class Order extends Model
             CashPayment::class
         );
     }
+
+    public function cancellation()
+{
+    return $this->hasOne(OrderCancellation::class);
+}
 
     /*
     |--------------------------------------------------------------------------

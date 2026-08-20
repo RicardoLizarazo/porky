@@ -80,7 +80,7 @@
                                     class="form-control @error('roles') is-invalid @enderror">
                                 @foreach ($allRoles as $role)
                                     <option value="{{ $role->id }}">
-                                        {{ $role->description ?? $role->name }}
+                                        {{ $role->name ?? $role->name }}
                                     </option>
                                 @endforeach
                             </select>

@@ -74,6 +74,16 @@ class DiningTable extends Model
         return $this->belongsTo(User::class, 'waiter_id');
     }
 
+    public function mergeAsPrimary()
+    {
+        return $this->hasOne(TableMerge::class, 'primary_table_id')->whereNull('closed_at');
+    }
+
+    public function mergeAsSecondary()
+    {
+        return $this->hasOne(TableMerge::class, 'secondary_table_id')->whereNull('closed_at');
+    }
+
     /*
     |--------------------------------------------------------------------------
     | ORDEN ACTIVA
@@ -156,6 +166,33 @@ class DiningTable extends Model
 
         return false;
     }
+
+/** Mesa efectiva de la orden: la propia, o la de la mesa principal si está unida como secundaria */
+public function effectiveOrder(): ?Order
+{
+    if ($this->activeOrder) {
+        return $this->activeOrder;
+    }
+
+    $merge = $this->mergeAsSecondary ?? $this->mergeAsSecondary()->first();
+
+    return $merge?->primaryTable?->activeOrder;
+}
+
+/** Libera la mesa y, si estaba unida, también la mesa hermana. Úsalo donde hoy cierras/pagas la orden. */
+public function releaseWithMerges(): void
+{
+    $merge = $this->mergeAsPrimary()->first() ?? $this->mergeAsSecondary()->first();
+
+    if ($merge) {
+        self::whereIn('id', [$merge->primary_table_id, $merge->secondary_table_id])
+            ->update(['status' => self::AVAILABLE, 'waiter_id' => null]);
+
+        $merge->update(['closed_at' => now()]);
+    } else {
+        $this->update(['status' => self::AVAILABLE, 'waiter_id' => null]);
+    }
+}
 
     /*
     |--------------------------------------------------------------------------

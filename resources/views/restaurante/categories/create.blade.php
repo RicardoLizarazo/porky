@@ -72,6 +72,35 @@
 
                     </div>
 
+                    <hr>
+
+                    {{-- ESTACIÓN DE COCINA --}}
+                    <div class="form-group">
+                        <label class="font-weight-bold">
+                            Estación de cocina
+                        </label>
+
+                        <select
+                            class="form-control @error('kitchen_station_id') is-invalid @enderror"
+                            wire:model.defer="kitchen_station_id">
+
+                            <option value="">Seleccione una estación...</option>
+
+                            @foreach($kitchenStations as $station)
+                                <option value="{{ $station->id }}">
+                                    {{ $station->name }}
+                                </option>
+                            @endforeach
+
+                        </select>
+
+                        @error('kitchen_station_id')
+                            <span class="invalid-feedback">
+                                {{ $message }}
+                            </span>
+                        @enderror
+                    </div>
+
                 </div>
 
                 {{-- FOOTER --}}

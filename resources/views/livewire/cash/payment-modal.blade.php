@@ -280,19 +280,27 @@
                             </div>
 
                             <div class="col-md-5">
-
                                 <input
-
-                                    type="number"
-
-                                    class="form-control"
-
-                                    min="0"
-
-                                    step="100"
-
-                                    wire:model.live="payments.{{ $index }}.amount">
-
+                                    type="text"
+                                    inputmode="numeric"
+                                    class="form-control text-end"
+                                    placeholder="0"
+                                    x-data="{
+                                        raw: @entangle('payments.' . $index . '.amount').live,
+                                        display: ''
+                                    }"
+                                    x-init="
+                                        display = raw ? new Intl.NumberFormat('es-CO').format(raw) : '';
+                                        $watch('raw', value => {
+                                            display = value ? new Intl.NumberFormat('es-CO').format(value) : '';
+                                        });
+                                    "
+                                    x-model="display"
+                                    @input="
+                                        let clean = $event.target.value.replace(/\D/g, '');
+                                        raw = clean ? parseInt(clean, 10) : 0;
+                                    "
+                                >
                             </div>
 
                             <div class="col-md-2">
@@ -486,23 +494,18 @@
                 <hr>
 
                 <div class="card card-outline card-primary">
-
                     <div class="card-header">
-
                         <strong>Datos para Factura Electrónica</strong>
-
                     </div>
 
                     <div class="card-body">
-
                         <div class="row">
 
                             <div class="col-md-3">
-
                                 <label>Tipo Documento</label>
 
                                 <select
-                                    class="form-control"
+                                    class="form-control @error('invoice.document_type') is-invalid @enderror"
                                     wire:model.live="invoice.document_type"
                                 >
                                     <option value="CC">CC</option>
@@ -512,30 +515,37 @@
                                     <option value="PP">Pasaporte</option>
                                 </select>
 
+                                @error('invoice.document_type')
+                                    <span class="invalid-feedback d-block">{{ $message }}</span>
+                                @enderror
                             </div>
 
                             <div class="col-md-4">
-
                                 <label>Número</label>
 
                                 <input
                                     type="text"
-                                    class="form-control"
+                                    class="form-control @error('invoice.document') is-invalid @enderror"
                                     wire:model.live="invoice.document"
                                 >
 
+                                @error('invoice.document')
+                                    <span class="invalid-feedback d-block">{{ $message }}</span>
+                                @enderror
                             </div>
 
                             <div class="col-md-5">
-
                                 <label>Nombre / Razón Social</label>
 
                                 <input
                                     type="text"
-                                    class="form-control"
+                                    class="form-control @error('invoice.name') is-invalid @enderror"
                                     wire:model.live="invoice.name"
                                 >
 
+                                @error('invoice.name')
+                                    <span class="invalid-feedback d-block">{{ $message }}</span>
+                                @enderror
                             </div>
 
                         </div>
@@ -543,45 +553,50 @@
                         <div class="row mt-2">
 
                             <div class="col-md-4">
-
                                 <label>Celular</label>
 
                                 <input
                                     type="text"
-                                    class="form-control"
+                                    class="form-control @error('invoice.phone') is-invalid @enderror"
                                     wire:model.live="invoice.phone"
                                 >
 
+                                @error('invoice.phone')
+                                    <span class="invalid-feedback d-block">{{ $message }}</span>
+                                @enderror
                             </div>
 
                             <div class="col-md-4">
-
                                 <label>Correo</label>
 
                                 <input
                                     type="email"
-                                    class="form-control"
+                                    class="form-control @error('invoice.email') is-invalid @enderror"
                                     wire:model.live="invoice.email"
                                 >
 
+                                @error('invoice.email')
+                                    <span class="invalid-feedback d-block">{{ $message }}</span>
+                                @enderror
                             </div>
 
                             <div class="col-md-4">
-
                                 <label>Dirección</label>
 
                                 <input
                                     type="text"
-                                    class="form-control"
+                                    class="form-control @error('invoice.address') is-invalid @enderror"
                                     wire:model.live="invoice.address"
                                 >
 
+                                @error('invoice.address')
+                                    <span class="invalid-feedback d-block">{{ $message }}</span>
+                                @enderror
                             </div>
 
                         </div>
 
                     </div>
-
                 </div>
 
                 @endif

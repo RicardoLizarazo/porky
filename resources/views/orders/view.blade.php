@@ -19,15 +19,31 @@
                 <div class="card mb-3 shadow-sm">
                     <div class="card-body py-2">
                         <div class="row">
-                            <div class="col-md-6">
+
+                            <div class="col-md-4">
                                 <small class="text-muted">Cliente</small><br>
                                 <strong>{{ $customer_name ?? 'N/A' }}</strong>
                             </div>
 
-                            <div class="col-md-6 text-md-right mt-2 mt-md-0">
+                            <div class="col-md-4">
+                                <small class="text-muted">Teléfono</small><br>
+
+                                @if($customer_phone)
+                                    <strong>
+                                        <i class="fas fa-phone-alt mr-1 text-success"></i>
+                                        {{ $customer_phone }}
+                                    </strong>
+                                @else
+                                    <strong>N/A</strong>
+                                @endif
+
+                            </div>
+
+                            <div class="col-md-4 text-md-right mt-2 mt-md-0">
                                 <small class="text-muted">Fecha</small><br>
                                 <strong>{{ $ordered_at }}</strong>
                             </div>
+
                         </div>
                     </div>
                 </div>

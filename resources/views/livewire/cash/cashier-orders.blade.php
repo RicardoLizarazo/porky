@@ -23,6 +23,27 @@
 <div>
     @include('livewire.cash.payment-modal')
 
+    {{-- PESTAÑAS DE CAJA (cuando el usuario tiene varias cajas abiertas a la vez) --}}
+    @if($sessions->count() > 1)
+        <div class="cobro-session-tabs mb-3">
+            @foreach($sessions as $s)
+                <button
+                    type="button"
+                    class="cobro-session-tab @if($activeSession && $activeSession->id === $s->id) active @endif"
+                    wire:click="selectSession({{ $s->id }})"
+                    wire:key="session-tab-{{ $s->id }}"
+                >
+                    <i class="fas fa-cash-register"></i>
+                    {{ $s->cashRegister?->name ?? 'Caja #' . $s->cash_register_id }}
+                </button>
+            @endforeach
+        </div>
+    @elseif($sessions->isEmpty())
+        <div class="alert alert-warning mb-3">
+            No tienes ninguna caja abierta. Abre una caja para poder ver y cobrar cuentas.
+        </div>
+    @endif
+
     {{-- RESUMEN --}}
     <div class="cobro-summary mb-3">
         <div class="cobro-summary-item">
@@ -99,6 +120,14 @@
                         >
                             <i class="fas fa-receipt"></i>
                         </a>
+                        
+                        <button
+                            class="btn btn-danger btn-sm"
+                            title="Cancelar pedido"
+                            wire:click="confirmCancelOrder({{ $order->id }})"
+                        >
+                            <i class="fas fa-ban"></i>
+                        </button>
 
                         <button
                             class="btn-cobrar"
@@ -127,6 +156,45 @@
 
 @push('css')
 <style>
+
+/* =========================================================
+   PESTAÑAS DE CAJA (varias cajas abiertas simultáneamente)
+========================================================= */
+.cobro-session-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.cobro-session-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border: 1.5px solid var(--brand-border, #f1d2bd);
+    background: #fff;
+    color: #6b5a52;
+    border-radius: 999px;
+    padding: 8px 16px;
+    font-size: .82rem;
+    font-weight: 700;
+    transition: all .18s ease;
+}
+
+.cobro-session-tab i {
+    font-size: .85rem;
+}
+
+.cobro-session-tab:hover {
+    border-color: var(--brand-primary, #8e0000);
+    color: var(--brand-primary, #8e0000);
+}
+
+.cobro-session-tab.active {
+    background: linear-gradient(90deg, var(--brand-secondary), var(--brand-primary));
+    border-color: transparent;
+    color: #fff;
+    box-shadow: 0 6px 14px rgba(198,40,40,.3);
+}
 
 /* =========================================================
    RESUMEN SUPERIOR
@@ -346,14 +414,42 @@
 @endpush
 
 @push('script')
-    <script>
-        document.addEventListener('livewire:init', () => {
-            Livewire.on('open-payment-modal', () => {
-                $('#paymentModal').modal('show');
-            });
-            Livewire.on('close-payment-modal', () => {
-                $('#paymentModal').modal('hide');
-            });
+<script>
+document.addEventListener('livewire:init', () => {
+    Livewire.on('open-payment-modal', () => {
+        $('#paymentModal').modal('show');
+    });
+
+    Livewire.on('close-payment-modal', () => {
+        $('#paymentModal').modal('hide');
+    });
+
+    Livewire.on('swal', (event) => {
+        Swal.fire({
+            icon: event.icon,
+            title: event.title
         });
-    </script>
+    });
+
+    Livewire.on('confirm-cancel-order', ({orderId}) => {
+        Swal.fire({
+            title:'Cancelar pedido',
+            text:`¿Cancelar la orden #${orderId}?`,
+            icon:'warning',
+            showCancelButton:true,
+            confirmButtonText:'Sí, cancelar',
+            cancelButtonText:'No'
+        }).then(result=>{
+            if(result.isConfirmed){
+                Livewire.dispatch(
+                    'cancelOrder',
+                    {
+                        orderId
+                    }
+                );
+            }
+        });
+    });
+});
+</script>
 @endpush

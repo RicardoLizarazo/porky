@@ -6,7 +6,9 @@ use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\CashCloseController;
 use App\Http\Controllers\Auth\CustomerAuthController;
+use App\Http\Controllers\VitrinaQuickOpenController;
 use App\Livewire\Reports\ReportsModule;
+use App\Livewire\VitrinaAccess;
 
 // Página inicial → login
 Route::get('/', function () {
@@ -35,6 +37,10 @@ Route::middleware(['auth.any'])->group(function () {
     Route::get('/menu', fn() => view('livewire.menu'))->name('menu');
 });
 
+Route::middleware(['web', 'auth'])
+    ->get('/pos/vitrina/{station}', [VitrinaQuickOpenController::class, 'open'])
+    ->name('pos.vitrina');
+
 Route::post('/logout-any', function (Request $request) {
 
     $redirect = '/';
@@ -58,11 +64,21 @@ Route::post('/logout-any', function (Request $request) {
 
 Auth::routes();
 
+
 Route::get('/orders/{order}/invoice', [OrderController::class, 'invoice'])->name('orders.invoice');
 Route::get('/orders/{order}/invoice-pdf', [OrderController::class, 'invoicePdf'])->name('orders.invoice.pdf');
 Route::get('/orders/{order}/ticket', [OrderController::class, 'ticket'])->name('orders.ticket');
 Route::get('/orders/{order}/tableTicket', [OrderController::class, 'tableTicket'])->name('orders.tableTicket');
 
+// COCINA — Board (TV): sin auth a propósito, la pantalla se conecta
+// por HDMI y no puede iniciar sesión. Es solo visualización, no
+// permite ninguna acción que escriba datos.
+Route::get('/kitchen-board/{station}', fn ($station) =>
+    view(
+        'livewire.restaurante.kitchen-board',
+        compact('station')
+    ))->name('kitchen.board');
+    
 // Rutas protegidas (solo si hay sesión web activa)
 Route::middleware(['auth'])->group(function () {
     Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
@@ -94,22 +110,35 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/cash/close', fn() => view('livewire.cash.close'))->name('cash.close');
     Route::get('cash/close/{cashSession}/print', [CashCloseController::class, 'print'])->name('cash.close.print')->middleware('auth');
 
-    // COCINA
-    //Route::get('/kitchen-board', fn() => view('livewire.restaurante.kitchen-board'))->name('kitchen.board');
-    Route::get('/kitchen-dispatch', fn() => view('livewire.restaurante.kitchen-dispatch'))->name('kitchen.dispatch');
-
-    Route::get('/kitchen-board/{station}', fn ($station) =>
+    Route::get('/kitchen-dispatch/{station}', fn ($station) =>
         view(
-            'livewire.restaurante.kitchen-board',
+            'livewire.restaurante.kitchen-dispatch',
             compact('station')
-        ))->name('kitchen.board');
+        ))->name('kitchen.dispatch');
 
-    // 🔥 REPORTES
+    // REPORTES WEB
     Route::get('/reports', fn() => view('reports'))->name('reports');
     Route::get('/reports/{type}', function ($type) {
         request()->merge(['type' => $type]);
         return view('reports');
     })->name('reports.type');
+
+    // REPORTES ADMINISTRATIVOS RESTAURANTE
+    Route::prefix('restaurant-reports')->name('restaurant.reports.')->group(function () {
+
+        Route::get('/', fn() => view('restaurant-reports.dashboard'))
+            ->name('dashboard');
+
+        Route::get('/waiter', fn() => view('restaurant-reports.waiter'))
+            ->name('waiter');
+        
+        Route::get('/floor', fn() => view('restaurant-reports.floor'))
+        ->name('floor');
+
+        Route::get('/table', fn() => view('restaurant-reports.table'))
+        ->name('table');
+    });
+
 
     Route::get('/routes', function () {return view('routes.index');})->name('routes.index');
 });

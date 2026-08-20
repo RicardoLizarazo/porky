@@ -12,6 +12,7 @@ class Category extends Model
     protected $fillable = [
         'name',
         'description',
+        'kitchen_station_id',
         'is_active',
         'is_visible',
     ];

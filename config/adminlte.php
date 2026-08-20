@@ -435,25 +435,82 @@ return [
                 ],
             ],
         ],
+[
+    'text' => 'Cocina',
+    'icon' => 'fas fa-fire',
+    'submenu' => [
+
         [
-            'text' => 'Cocina',
-            'url'  => '#',
-            'icon' => 'fas fa-fire',
-            'submenu' => [
-
-                [
-                    'text' => 'Monitor Cocina',
-                    'url'  => 'kitchen-board',
-                    'icon' => 'fas fa-tv',
-                ],
-
-                [
-                    'text' => 'Despacho',
-                    'url'  => 'kitchen-dispatch',
-                    'icon' => 'fas fa-check-circle',
-                ],
-            ],
+            'text'   => 'Parrilla',
+            'url'    => 'kitchen-board/1',
+            'icon'   => 'fas fa-fire text-danger',
+            'active' => ['kitchen-board/1'],
         ],
+
+        [
+            'text'   => 'Sopas',
+            'url'    => 'kitchen-board/2',
+            'icon'   => 'fas fa-fire text-info',
+            'active' => ['kitchen-board/2'],
+        ],
+
+        [
+            'text'   => 'Picadas',
+            'url'    => 'kitchen-board/3',
+            'icon'   => 'fas fa-fire text-warning',
+            'active' => ['kitchen-board/3'],
+        ],
+
+        [
+            'text'   => 'Bebidas',
+            'url'    => 'kitchen-board/4',
+            'icon'   => 'fas fa-fire text-success',
+            'active' => ['kitchen-board/4'],
+        ],
+
+        [
+            'text'   => 'Jugos',
+            'url'    => 'kitchen-board/5',
+            'icon'   => 'fas fa-fire text-success',
+            'active' => ['kitchen-board/5'],
+        ],
+
+        [
+            'text'   => 'Despacho Parrilla',
+            'url'    => 'kitchen-dispatch/1',
+            'icon'   => 'fas fa-check-circle text-danger',
+            'active' => ['kitchen-dispatch/1'],
+        ],
+
+        [
+            'text'   => 'Despacho Sopas',
+            'url'    => 'kitchen-dispatch/2',
+            'icon'   => 'fas fa-check-circle text-info',
+            'active' => ['kitchen-dispatch/2'],
+        ],
+
+        [
+            'text'   => 'Despacho Picadas',
+            'url'    => 'kitchen-dispatch/3',
+            'icon'   => 'fas fa-check-circle text-warning',
+            'active' => ['kitchen-dispatch/3'],
+        ],
+
+        [
+            'text'   => 'Despacho Bebidas',
+            'url'    => 'kitchen-dispatch/4',
+            'icon'   => 'fas fa-check-circle text-success',
+            'active' => ['kitchen-dispatch/4'],
+        ],
+
+        [
+            'text'   => 'Despacho Jugos',
+            'url'    => 'kitchen-dispatch/5',
+            'icon'   => 'fas fa-check-circle text-success',
+            'active' => ['kitchen-dispatch/5'],
+        ],
+    ],
+],
         [
             'text' => 'Pedidos',
             'url'  => 'admin/settings',
@@ -522,6 +579,42 @@ return [
                     'icon' => 'fas fa-credit-card',
                     'can' => 'reports.payments',
                     'active' => ['reports/payments*'],
+                ],
+            ],
+        ],
+        [
+            'text' => 'Reportes Restaurante',
+            'url'  => 'restaurant-reports',
+            'icon' => 'fas fa-utensils',
+            'can'  => 'restaurant_reports.view',
+            'submenu' => [
+                [
+                    'text' => 'Dashboard Comercial',
+                    'url'  => 'restaurant-reports',
+                    'icon' => 'fas fa-chart-pie',
+                    'can'  => 'restaurant_reports.dashboard',
+                    'active' => ['restaurant-reports'],
+                ],
+                [
+                    'text' => 'Ventas por Piso',
+                    'url'  => 'restaurant-reports/floor',
+                    'icon' => 'fas fa-building',
+                    'can'  => 'restaurant_reports.floor',
+                    'active' => ['restaurant-reports/floor*'],
+                ],
+                [
+                    'text' => 'Ventas por Mesa',
+                    'url'  => 'restaurant-reports/table',
+                    'icon' => 'fas fa-chair',
+                    'can'  => 'restaurant_reports.table',
+                    'active' => ['restaurant-reports/table*'],
+                ],
+                [
+                    'text' => 'Ventas por Mesero',
+                    'url'  => 'restaurant-reports/waiter',
+                    'icon' => 'fas fa-user-tie',
+                    'can'  => 'restaurant_reports.waiter',
+                    'active' => ['restaurant-reports/waiter*'],
                 ],
             ],
         ],

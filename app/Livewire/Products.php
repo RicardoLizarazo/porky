@@ -5,6 +5,7 @@ namespace App\Livewire;
 use Livewire\Component;
 use App\Models\Product;
 use App\Models\Category;
+use App\Models\KitchenStation;
 use App\Models\ProductRule;
 use Livewire\Attributes\Validate;
 use Livewire\Attributes\Locked;
@@ -42,6 +43,14 @@ class Products extends Component
     #[Validate('boolean')]
     public $is_active = true;
 
+    #[Validate('boolean')]
+    public $allow_manual_price = false;
+
+    // Ahora es un arreglo: un producto puede pertenecer a varias
+    // estaciones (ej. una picada que va a Parrilla y a Picadas).
+    #[Validate('array')]
+    public $kitchen_station_ids = [];
+
     #[Validate('nullable|image|max:2048')] // 2MB
     public $image;
 
@@ -54,8 +63,10 @@ class Products extends Component
 
     public function render()
     {
-        return view('restaurante.products.index', [
-            'categories' => Category::pluck('name','id')
+        return view('restaurante.products.index',[
+            'categories' => Category::pluck('name','id'),
+            'kitchenStations' => KitchenStation::active()
+                ->pluck('name','id'),
         ]);
     }
 
@@ -65,18 +76,22 @@ class Products extends Component
             'name',
             'code',
             'category_id',
+            'kitchen_station_ids',
             'price',
             'description',
             'packaging_cost',
             'is_visible',
             'is_active',
+            'allow_manual_price',
             'image',
             'image_preview'
         ]);
 
+        $this->kitchen_station_ids = [];
         $this->packaging_cost = 0;
         $this->is_visible = true;
         $this->is_active = true;
+        $this->allow_manual_price = false;
 
         $this->resetValidation();
     }
@@ -98,17 +113,21 @@ class Products extends Component
             $imagePath = $this->image->store('products', 'public');
         }
 
-        Product::create([
+        $product = Product::create([
             'name' => $this->name,
             'code' => $this->code,
             'category_id' => $this->category_id,
             'price' => $this->price,
             'description' => $this->description,
             'packaging_cost' => $this->packaging_cost ?? 0,
+            'allow_manual_price' => $this->allow_manual_price,
             'is_visible' => $this->is_visible,
             'is_active' => $this->is_active,
             'image' => $imagePath,
         ]);
+
+        // Guarda las estaciones marcadas en la tabla pivote
+        $product->kitchenStations()->sync($this->kitchen_station_ids);
 
         $this->dispatch('store');
         $this->dispatch('refreshDatatable');
@@ -117,15 +136,20 @@ class Products extends Component
     #[On('edit')]
     public function edit($id)
     {
-        $product = Product::findOrFail($id);
+        $product = Product::with('kitchenStations')
+            ->findOrFail($id);
 
         $this->product_id = $id;
         $this->name = $product->name;
         $this->code = $product->code;
         $this->category_id = $product->category_id;
+        $this->kitchen_station_ids = $product->kitchenStations
+            ->pluck('id')
+            ->toArray();
         $this->price = $product->price;
         $this->description = $product->description;
         $this->packaging_cost = $product->packaging_cost;
+        $this->allow_manual_price = $product->allow_manual_price;
         $this->is_visible = $product->is_visible;
         $this->is_active = $product->is_active;
         
@@ -153,10 +177,15 @@ class Products extends Component
             'price' => $this->price,
             'description' => $this->description,
             'packaging_cost' => $this->packaging_cost ?? 0,
+            'allow_manual_price' => $this->allow_manual_price,
             'is_visible' => $this->is_visible,
             'is_active' => $this->is_active,
             'image' => $imagePath,
         ]);
+
+        // Reemplaza el set de estaciones por el que quedó marcado
+        // (sync borra las que se desmarcaron y agrega las nuevas)
+        $product->kitchenStations()->sync($this->kitchen_station_ids);
 
         $this->dispatch('update');
         $this->dispatch('refreshDatatable');

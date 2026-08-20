@@ -5,9 +5,12 @@ namespace App\Livewire\Restaurante;
 use Livewire\Component;
 use App\Models\KitchenOrderDetail;
 use App\Models\KitchenStation;
+use App\Livewire\Restaurante\Concerns\ResolvesKitchenStations;
 
 class KitchenBoard extends Component
 {
+    use ResolvesKitchenStations;
+
     public $station;
 
     public function mount($station)
@@ -17,9 +20,19 @@ class KitchenBoard extends Component
 
     public function render()
     {
-        $station = KitchenStation::findOrFail(
-            $this->station
-        );
+        $stationIds = $this->resolveStationIds($this->station);
+
+        $stationModels = KitchenStation::whereIn('id', $stationIds)->get();
+
+        if ($stationModels->isEmpty()) {
+            abort(404);
+        }
+
+        $stationLabel = $this->resolveStationLabel($stationIds, $stationModels);
+
+        $isCombined = count($stationIds) > 1;
+
+        $switcher = $this->buildStationSwitcher('kitchen.board', $stationIds);
 
         $details = KitchenOrderDetail::with([
 
@@ -32,10 +45,8 @@ class KitchenBoard extends Component
             'kitchenOrder.order.user'
 
         ])
-        ->where(
-            'kitchen_station_id',
-            $this->station
-        )
+        ->whereIn('kitchen_station_id', $stationIds)
+        ->where('status', 'pending')
         ->whereHas('kitchenOrder', function ($query) {
 
             $query->where(
@@ -44,14 +55,19 @@ class KitchenBoard extends Component
             );
 
         })
-        ->latest()
-        ->get();
+        ->get()
+        ->sortBy(function ($item) {
+            return $item->kitchenOrder->sent_at;
+        })
+        ->values();
 
         return view(
             'restaurante.kitchen.board',
             compact(
                 'details',
-                'station'
+                'stationLabel',
+                'isCombined',
+                'switcher'
             )
         );
     }

@@ -30,7 +30,7 @@ class Product extends Model
         'is_active' => 'boolean',
     ];
 
-    // 🔥 Agregar appends para que los accessors estén disponibles
+    // Agregar appends para que los accessors estén disponibles
     protected $appends = ['image_url', 'product_info'];
 
     /*
@@ -55,6 +55,12 @@ class Product extends Model
     {
         return $this->hasMany(OrderDetail::class);
     }
+
+    public function kitchenStations()
+    {
+        return $this->belongsToMany(KitchenStation::class, 'kitchen_station_product');
+    }
+
 
     public function rules()
     {
