@@ -7,6 +7,7 @@ use App\Models\Product;
 use App\Models\Category;
 use App\Models\KitchenStation;
 use App\Models\ProductRule;
+use App\Models\ProductOption;
 use Livewire\Attributes\Validate;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\On;
@@ -60,6 +61,10 @@ class Products extends Component
     public $selectedRules = [];
     public $productId;
     public $productName;
+    
+    public $optionProductId;
+    public $optionProductName;
+    public $productOptions = [];   // [['id'=>1,'name'=>'Con Dulce']
 
     public function render()
     {
@@ -183,7 +188,7 @@ class Products extends Component
             'image' => $imagePath,
         ]);
 
-        // Reemplaza el set de estaciones por el que quedó marcado
+        // Reemplaza el set de estaciones por el que qued贸 marcado
         // (sync borra las que se desmarcaron y agrega las nuevas)
         $product->kitchenStations()->sync($this->kitchen_station_ids);
 
@@ -226,5 +231,76 @@ class Products extends Component
     {
         Product::findOrFail($id)->delete();
         $this->dispatch('refreshDatatable');
+    }
+    
+
+    #[On('product-options')]
+    public function manageOptions($id)
+    {
+        $product = Product::findOrFail($id);
+    
+        $this->optionProductId   = $product->id;
+        $this->optionProductName = $product->name;
+    
+        $this->productOptions = ProductOption::where('product_id', $product->id)
+            ->orderBy('sort_order')
+            ->get(['id', 'name'])
+            ->map(fn ($o) => ['id' => $o->id, 'name' => $o->name])
+            ->toArray();
+    
+        $this->dispatch('open-options-modal');
+    }
+    
+    public function addOptionRow()
+    {
+        $this->productOptions[] = ['id' => null, 'name' => ''];
+    }
+    
+    public function removeOptionRow($index)
+    {
+        unset($this->productOptions[$index]);
+    
+        $this->productOptions = array_values($this->productOptions);
+    }
+    
+    public function saveOptions()
+    {
+        $keepIds = [];
+    
+        foreach ($this->productOptions as $i => $row) {
+    
+            // El pipe es el separador del campo comment en PosOrder:
+            // si entra en el nombre, rompe el parseo del empaque.
+            $name = trim(str_replace(['|', ','], ' ', $row['name'] ?? ''));
+    
+            if ($name === '') {
+                continue;
+            }
+    
+            if (! empty($row['id'])) {
+    
+                ProductOption::where('id', $row['id'])
+                    ->where('product_id', $this->optionProductId)
+                    ->update(['name' => $name, 'sort_order' => $i]);
+    
+                $keepIds[] = $row['id'];
+    
+            } else {
+    
+                $keepIds[] = ProductOption::create([
+                    'product_id' => $this->optionProductId,
+                    'name'       => $name,
+                    'sort_order' => $i,
+                    'active'     => true,
+                ])->id;
+            }
+        }
+    
+        ProductOption::where('product_id', $this->optionProductId)
+            ->whereNotIn('id', $keepIds)
+            ->delete();
+    
+        $this->dispatch('success');
+        $this->dispatch('options-saved');
     }
 }

@@ -19,8 +19,8 @@
     <div class="row">
         <div class="col-12">
         	@include('restaurante.products.create')
-            @include('restaurante.products.rules')
             @include('restaurante.products.edit')
+            @include('restaurante.products.options')
             <div class="card">
                 <div class="card-header">
                     <h3>Productos
@@ -76,17 +76,17 @@
                   timer: 1500
                 })
             });
-
-            Livewire.on('open-rules-modal', () => {
+            
+            Livewire.on('open-options-modal', () => {
                 window.dispatchEvent(new CustomEvent('toggle-loading', { detail: false }));
-                $('#modal-rules').modal();
+                $("#modal-options").modal();
             });
-
-            Livewire.on('rules-saved', () => {
-                $('#modal-rules').modal('hide');
+            
+            Livewire.on('options-saved', () => {
+                $('#modal-options').modal('hide');
                 Swal.fire({
                     icon: 'success',
-                    title: 'Reglas actualizadas',
+                    title: 'Opciones guardadas',
                     showConfirmButton: false,
                     timer: 1500
                 });

@@ -8,14 +8,17 @@
             <i class="fas fa-edit"></i>
         </button>
     @endcan
-
-    <button @click="window.dispatchEvent(new CustomEvent('toggle-loading', { detail: true })); $dispatch('product-rules', { id: {{ $product->id }} })"
-        class="btn btn-cef btn-secondary"
-        title="Reglas"
-        data-toggle="tooltip"
-    >
-        <i class="fas fa-random"></i>
-    </button>
+    
+    @can('products.edit')
+        <button @click="window.dispatchEvent(new CustomEvent('toggle-loading', { detail: true }));
+                        $dispatch('product-options', { id: {{ $product->id }} })"
+            class="btn btn-cef btn-secondary"
+            title="Opciones"
+            data-toggle="tooltip"
+        >
+            <i class="fas fa-sliders-h"></i>
+        </button>
+    @endcan
 
     @can('products.delete')
         <button wire:click="$dispatch('delete', {{ $product->id }})"

@@ -2,6 +2,12 @@
 
     @php
         $sentToKitchen = in_array($item['id'], $sentToKitchenIds ?? []);
+
+        preg_match('/EMPAQUE=(\d+)/', $item['comment'] ?? '', $matches);
+        $packagingQty = (int) ($matches[1] ?? 0);
+
+        // Todo lo que no sea el token de empaque son las opciones elegidas
+        $optionsText = trim(preg_replace('/\s*\|?\s*EMPAQUE=\d+/', '', $item['comment'] ?? ''));
     @endphp
 
     <div class="pos-cart-item border-bottom pb-3 mb-3 {{ $sentToKitchen ? 'pos-cart-item-sent' : '' }}">
@@ -27,31 +33,30 @@
                     x{{ $item['quantity'] }}
                 </div>
 
+                {{-- OPCIONES ELEGIDAS --}}
+                @if($optionsText)
+                    <div class="small pos-item-options mt-1">
+                        <i class="fas fa-sliders-h mr-1"></i>
+                        {{ $optionsText }}
+                    </div>
+                @endif
+
                 @if($item['product']['allow_manual_price'])
                     <div class="mt-2">
                         <small class="text-muted d-block mb-1">
                             Valor por porción
                         </small>
 
-                        <input
-                            type="text"
-                            inputmode="numeric"
-                            class="form-control form-control-sm pos-manual-price text-end"
-                            x-data="{
-                                display: new Intl.NumberFormat('es-CO').format(
-                                    {{ $item['manual_price'] ?: $item['price'] }}
-                                )
-                            }"
-                            x-model="display"
-                            @input="
-                                let clean = $event.target.value.replace(/\D/g, '');
-                                display = clean ? new Intl.NumberFormat('es-CO').format(clean) : '';
-                            "
-                            @change="
-                                let clean = $event.target.value.replace(/\D/g, '') || 0;
-                                $wire.updateManualPrice({{ $item['id'] }}, clean);
-                            "
-                        >
+                            <input 
+                                type="number" 
+                                inputmode="numeric" 
+                                pattern="[0-9]*" 
+                                min="0" 
+                                step="1" 
+                                class="form-control form-control-sm pos-manual-price" 
+                                value="{{ $item['manual_price'] ?: $item['price'] }}" 
+                                wire:change="updateManualPrice({{ $item['id'] }}, $event.target.value)"
+                            >
                     </div>
                 @endif
 
@@ -62,11 +67,6 @@
                         ${{ number_format($item['manual_price'], 0, ',', '.') }}
                     </div>
                 @endif
-
-                @php
-                    preg_match('/EMPAQUE=(\d+)/', $item['comment'] ?? '', $matches);
-                    $packagingQty = (int) ($matches[1] ?? 0);
-                @endphp
 
                 @if($packagingQty > 0)
                     <div class="small text-warning mt-1">
@@ -99,8 +99,9 @@
                         {{ $item['quantity'] }}
                     </span>
 
+                    {{-- Repite ESTA linea con sus mismas opciones, sin volver a preguntar --}}
                     <button
-                        wire:click="addProduct({{ $item['product_id'] }})"
+                        wire:click="increaseDetail({{ $item['id'] }})"
                         class="btn-qty btn-qty-plus"
                     >
                         +
@@ -227,6 +228,12 @@
     border-radius: 8px;
 }
 
+/* ---- Opciones elegidas por el mesero ---- */
+.pos-item-options {
+    color: #8e6a00;
+    font-weight: 700;
+}
+
 /* ---- Estado: enviado a cocina ---- */
 .pos-cart-item-sent {
     background: rgba(67,160,71,.05);
@@ -260,7 +267,7 @@
             html: `
                 <p class="text-muted small mb-2" style="text-align:left;">
                     Este producto ya fue enviado a preparacion. Quitarlo requiere
-                    autorizacion de un Administrador.
+                    el PIN de autorizacion.
                 </p>
                 <select id="remove-reason" class="swal2-select" style="display:block;width:100%;margin:0 0 10px;">
                     <option value="">Selecciona un motivo</option>
@@ -269,7 +276,7 @@
                     <option value="producto_agotado">Producto agotado en cocina</option>
                     <option value="otro">Otro motivo</option>
                 </select>
-                <input type="password" id="remove-password" class="swal2-input" placeholder="Contrasena de Administrador" style="margin:0;">
+                <input type="password" inputmode="numeric" maxlength="6" id="remove-pin" class="swal2-input" placeholder="PIN de autorizacion" style="margin:0;letter-spacing:4px;text-align:center;">
             `,
             icon: 'warning',
             showCancelButton: true,
@@ -279,23 +286,23 @@
             focusConfirm: false,
             preConfirm: () => {
                 const reason = document.getElementById('remove-reason').value;
-                const password = document.getElementById('remove-password').value;
+                const pin = document.getElementById('remove-pin').value;
 
                 if (!reason) {
                     Swal.showValidationMessage('Selecciona un motivo');
                     return false;
                 }
 
-                if (!password) {
-                    Swal.showValidationMessage('Ingresa la contrasena');
+                if (!pin) {
+                    Swal.showValidationMessage('Ingresa el PIN de autorizacion');
                     return false;
                 }
 
-                return { reason, password };
+                return { reason, pin };
             }
         }).then((result) => {
             if (result.isConfirmed) {
-                @this.removeProductSecure(itemId, result.value.password, result.value.reason);
+                @this.removeProductSecure(itemId, result.value.pin, result.value.reason);
             }
         });
     }

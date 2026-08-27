@@ -1,12 +1,10 @@
 @if($order->packaging_total > 0)
-
     <div class="d-flex justify-content-between small mb-2">
-        <span>🥡 Empaque</span>
+        <span><i class="fas fa-box mr-1"></i> Empaque</span>
         <span>
             ${{ number_format($order->packaging_total, 0, ',', '.') }}
         </span>
     </div>
-
 @endif
 
 <div class="d-flex justify-content-between align-items-center mb-3">
@@ -27,12 +25,10 @@
     font-size: 1rem;
     color: var(--brand-dark, #140a0a);
 }
-
 .pos-footer-total-amount {
     font-size: 1.4rem;
     color: var(--brand-primary-dark, #8e0000);
 }
-
 .btn-send-kitchen {
     width: 100%;
     min-height: 52px;
@@ -44,7 +40,6 @@
     font-size: 1rem;
     box-shadow: 0 6px 16px rgba(198,40,40,.3);
 }
-
 .btn-send-kitchen:active {
     transform: scale(.98);
 }

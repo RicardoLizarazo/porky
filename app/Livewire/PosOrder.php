@@ -42,6 +42,24 @@ class PosOrder extends Component
 
     /*
     |--------------------------------------------------------------------------
+    | OPCIONES DE PRODUCTO
+    |--------------------------------------------------------------------------
+    | El texto elegido se guarda en order_details.comment, igual que el
+    | empaque. Formato del campo:  "Sin Dulce, Con hielo | EMPAQUE=2"
+    */
+
+    public $showOptionsModal = false;
+
+    public $optionsProductId = null;
+
+    public $optionsProductName = '';
+
+    public $optionsList = [];
+
+    public $optionsSelected = null;
+
+    /*
+    |--------------------------------------------------------------------------
     | MOUNT
     |--------------------------------------------------------------------------
     */
@@ -72,20 +90,100 @@ class PosOrder extends Component
 
     /*
     |--------------------------------------------------------------------------
+    | HELPERS DEL CAMPO COMMENT
+    |--------------------------------------------------------------------------
+    */
+
+    /**
+     * Devuelve solo la parte de opciones del comment, sin el token de empaque.
+     */
+    protected function optionsFromComment(?string $comment): string
+    {
+        return trim(preg_replace('/\s*\|?\s*EMPAQUE=\d+/', '', (string) $comment));
+    }
+
+    /**
+     * Reconstruye el comment conservando ambas partes. Se usa siempre que se
+     * toque el empaque, para no borrar las opciones elegidas por el mesero.
+     */
+    protected function buildComment(?string $options, int $packaging): ?string
+    {
+        $parts = [];
+
+        if (filled($options)) {
+            $parts[] = trim($options);
+        }
+
+        if ($packaging > 0) {
+            $parts[] = "EMPAQUE={$packaging}";
+        }
+
+        return $parts ? implode(' | ', $parts) : null;
+    }
+
+    /**
+     * Texto legible para la pantalla de cocina: opciones + para llevar,
+     * sin el token tecnico EMPAQUE=.
+     */
+    protected function kitchenNote(?string $comment): ?string
+    {
+        $options = $this->optionsFromComment($comment);
+
+        preg_match('/EMPAQUE=(\d+)/', (string) $comment, $matches);
+
+        $packaging = (int) ($matches[1] ?? 0);
+
+        $parts = [];
+
+        if (filled($options)) {
+            $parts[] = $options;
+        }
+
+        if ($packaging > 0) {
+            $parts[] = "Para llevar: {$packaging}";
+        }
+
+        return $parts ? implode(' | ', $parts) : null;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
     | ADD PRODUCT
     |--------------------------------------------------------------------------
     */
 
-    public function addProduct($productId)
+    /**
+     * $options === null  -> hay que preguntar (abre el modal si aplica)
+     * $options === ''    -> ya se resolvio, sin opciones
+     * $options === '...' -> ya se resolvio, con opciones
+     */
+    public function addProduct($productId, ?string $options = null)
     {
+        $product = Product::with('options')->findOrFail($productId);
+
+        // Producto con opciones configuradas y todavia sin resolver
+        if ($options === null && $product->options->isNotEmpty()) {
+
+            $this->optionsProductId   = $product->id;
+            $this->optionsProductName = $product->name;
+            $this->optionsList        = $product->options->pluck('name')->all();
+            $this->optionsSelected    = null;
+            $this->showOptionsModal   = true;
+
+            return;
+        }
+
+        $options = (string) $options;
+
         // Solo reutilizamos una fila existente si todavía NO se envió a
-        // cocina. Si ya se envió, las unidades nuevas van en una fila
-        // aparte, para no mezclar lo ya preparado con lo pendiente.
-        $detail = OrderDetail::where([
-            'order_id' => $this->order->id,
-            'product_id' => $productId,
-            'sent_to_kitchen' => false,
-        ])->first();
+        // cocina Y si tiene exactamente las mismas opciones. Si ya se envió,
+        // las unidades nuevas van en una fila aparte, para no mezclar lo ya
+        // preparado con lo pendiente.
+        $detail = OrderDetail::where('order_id', $this->order->id)
+            ->where('product_id', $productId)
+            ->where('sent_to_kitchen', false)
+            ->get()
+            ->first(fn ($row) => $this->optionsFromComment($row->comment) === $options);
 
         if ($detail) {
 
@@ -102,8 +200,6 @@ class PosOrder extends Component
 
         } else {
 
-            $product = Product::findOrFail($productId);
-
             OrderDetail::create([
 
                 'order_id' => $this->order->id,
@@ -117,10 +213,57 @@ class PosOrder extends Component
                 'price' => $product->price,
 
                 'subtotal' => $product->price,
+
+                'comment' => $this->buildComment($options, 0),
             ]);
         }
 
         $this->refreshOrder();
+    }
+
+    /**
+     * Boton "+" del carrito. Repite la MISMA linea (mismas opciones) en vez
+     * de volver a preguntar.
+     */
+    public function increaseDetail($detailId)
+    {
+        $detail = OrderDetail::findOrFail($detailId);
+
+        $this->addProduct(
+            $detail->product_id,
+            $this->optionsFromComment($detail->comment)
+        );
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | MODAL DE OPCIONES
+    |--------------------------------------------------------------------------
+    */
+
+    public function toggleOptionValue($name)
+    {
+        $this->optionsSelected = ($this->optionsSelected === $name) ? null : $name;
+    }
+
+    public function confirmOptions()
+    {
+        $productId = $this->optionsProductId;
+
+        $options = (string) $this->optionsSelected;
+
+        $this->closeOptionsModal();
+
+        $this->addProduct($productId, $options);
+    }
+
+    public function closeOptionsModal()
+    {
+        $this->showOptionsModal   = false;
+        $this->optionsProductId   = null;
+        $this->optionsProductName = '';
+        $this->optionsList        = [];
+        $this->optionsSelected = null;
     }
 
     /*
@@ -262,7 +405,11 @@ class PosOrder extends Component
             $qty++;
         }
 
-        $detail->comment = "EMPAQUE={$qty}";
+        // Reconstruye conservando las opciones del producto
+        $detail->comment = $this->buildComment(
+            $this->optionsFromComment($detail->comment),
+            $qty
+        );
 
         $detail->save();
 
@@ -283,7 +430,11 @@ class PosOrder extends Component
 
         $qty = max(0, $qty - 1);
 
-        $detail->comment = "EMPAQUE={$qty}";
+        // Reconstruye conservando las opciones del producto
+        $detail->comment = $this->buildComment(
+            $this->optionsFromComment($detail->comment),
+            $qty
+        );
 
         $detail->save();
 
@@ -315,7 +466,7 @@ class PosOrder extends Component
 
         $this->refreshOrder();
     }
-    
+
     /*
     |--------------------------------------------------------------------------
     | COCINA
@@ -418,7 +569,7 @@ class PosOrder extends Component
                     'quantity'           => $detail->quantity,
                     'price'              => $unitPrice,
                     'subtotal'           => $detail->subtotal,
-                    'comment'            => $detail->comment,
+                    'comment'            => $this->kitchenNote($detail->comment),
                 ]);
             }
 
@@ -445,8 +596,8 @@ class PosOrder extends Component
             ->unique()
             ->toArray();
     }
-    
-/**
+
+    /**
      * Vuelve a leer la orden desde la BD (por ejemplo, is_paid) sin recargar
      * nada más. La usa el wire:poll de las estaciones de Vitrina, para que
      * el botón "Nuevo cliente" se active solo apenas caja cobra, sin que el
@@ -504,20 +655,20 @@ class PosOrder extends Component
             $this->dispatch('show-error', message: 'PIN de autorización incorrecto.');
             return;
         }
-    
+
         $user = auth()->user();
-    
+
         $motivos = [
             'cliente_cancelo'  => 'Cliente canceló',
             'error_pedido'     => 'Error al tomar el pedido',
             'producto_agotado' => 'Producto agotado en cocina',
             'otro'             => 'Otro motivo',
         ];
-    
+
         $motivoTexto = $motivos[$reason] ?? $reason;
-    
+
         $detail = OrderDetail::find($itemId);
-    
+
         activity('order')
             ->causedBy($user)
             ->performedOn($this->order)
@@ -528,7 +679,7 @@ class PosOrder extends Component
                 'motivo'          => $motivoTexto,
             ])
             ->log('Producto quitado del pedido (ya enviado a cocina)');
-    
+
         $this->deleteDetail($itemId);
     }
 

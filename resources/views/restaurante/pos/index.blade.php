@@ -231,6 +231,9 @@
         </div>
     </div>
 
+    {{-- MODAL DE OPCIONES --}}
+    @include('restaurante.pos.options-modal')
+
 </div>
 
 @push('css')
