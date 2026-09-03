@@ -95,18 +95,38 @@ class PosOrder extends Component
     */
 
     /**
-     * Devuelve solo la parte de opciones del comment, sin el token de empaque.
+     * Devuelve solo la parte de opciones del comment, sin el token de empaque
+     * ni el de nota para cocina.
      */
     protected function optionsFromComment(?string $comment): string
     {
-        return trim(preg_replace('/\s*\|?\s*EMPAQUE=\d+/', '', (string) $comment));
+        $text = (string) $comment;
+
+        $text = preg_replace('/\s*\|?\s*EMPAQUE=\d+/', '', $text);
+
+        $text = preg_replace('/\s*\|?\s*NOTA=.*$/s', '', $text);
+
+        return trim($text);
     }
 
     /**
-     * Reconstruye el comment conservando ambas partes. Se usa siempre que se
-     * toque el empaque, para no borrar las opciones elegidas por el mesero.
+     * Devuelve solo el texto libre que el mesero escribió como nota para
+     * cocina (token NOTA=... al final del comment).
      */
-    protected function buildComment(?string $options, int $packaging): ?string
+    protected function noteFromComment(?string $comment): string
+    {
+        preg_match('/NOTA=(.*)$/s', (string) $comment, $matches);
+
+        return trim($matches[1] ?? '');
+    }
+
+    /**
+     * Reconstruye el comment conservando las 3 partes que puede tener:
+     * opciones elegidas, empaque y nota libre del mesero para cocina.
+     * Se usa siempre que se toque cualquiera de las tres, para no borrar
+     * las otras dos.
+     */
+    protected function buildComment(?string $options, int $packaging, ?string $note = null): ?string
     {
         $parts = [];
 
@@ -118,16 +138,22 @@ class PosOrder extends Component
             $parts[] = "EMPAQUE={$packaging}";
         }
 
+        if (filled($note)) {
+            $parts[] = "NOTA=" . trim($note);
+        }
+
         return $parts ? implode(' | ', $parts) : null;
     }
 
     /**
-     * Texto legible para la pantalla de cocina: opciones + para llevar,
-     * sin el token tecnico EMPAQUE=.
+     * Texto legible para la pantalla de cocina: opciones + para llevar +
+     * nota libre del mesero, sin los tokens tecnicos EMPAQUE=/NOTA=.
      */
     protected function kitchenNote(?string $comment): ?string
     {
         $options = $this->optionsFromComment($comment);
+
+        $note = $this->noteFromComment($comment);
 
         preg_match('/EMPAQUE=(\d+)/', (string) $comment, $matches);
 
@@ -141,6 +167,10 @@ class PosOrder extends Component
 
         if ($packaging > 0) {
             $parts[] = "Para llevar: {$packaging}";
+        }
+
+        if (filled($note)) {
+            $parts[] = "Nota: {$note}";
         }
 
         return $parts ? implode(' | ', $parts) : null;
@@ -290,6 +320,8 @@ class PosOrder extends Component
             $detail->save();
 
         } else {
+            
+            $this->cancelKitchenTicketsFor($detail);
 
             $detail->delete();
         }
@@ -299,9 +331,58 @@ class PosOrder extends Component
 
     public function deleteDetail($detailId)
     {
-        OrderDetail::findOrFail($detailId)->delete();
+        $detail = OrderDetail::findOrFail($detailId);
+
+        $this->cancelKitchenTicketsFor($detail);
+
+        $detail->delete();
 
         $this->refreshOrder();
+    }
+    
+    /**
+     * Cancela en cascada los tickets de cocina de un OrderDetail que ya
+     * se había enviado (si nunca se envió, esto simplemente no encuentra
+     * nada y no hace nada). Un producto que ya se marcó "listo" en su
+     * estación NO se toca — se respeta lo que cocina ya preparó.
+     *
+     * Si al cancelar no queda ningún producto pendiente en el pedido de
+     * cocina (todo quedó ready o cancelled), el pedido completo pasa a
+     * 'ready' para que deje de aparecer como pendiente en cualquier
+     * board/despacho, igual que ya pasa cuando se despacha normalmente.
+     */
+    private function cancelKitchenTicketsFor(OrderDetail $detail): void
+    {
+        $affectedOrderIds = KitchenOrderDetail::where('order_detail_id', $detail->id)
+            ->where('status', 'pending')
+            ->pluck('kitchen_order_id')
+            ->unique();
+
+        if ($affectedOrderIds->isEmpty()) {
+            return;
+        }
+
+        KitchenOrderDetail::where('order_detail_id', $detail->id)
+            ->where('status', 'pending')
+            ->update([
+                'status' => 'cancelled',
+                'ready_at' => now(),
+                'resolved_by' => Auth::id(),
+            ]);
+
+        foreach ($affectedOrderIds as $kitchenOrderId) {
+
+            $stillPending = KitchenOrderDetail::where('kitchen_order_id', $kitchenOrderId)
+                ->where('status', 'pending')
+                ->exists();
+
+            if (! $stillPending) {
+                KitchenOrder::where('id', $kitchenOrderId)->update([
+                    'status' => 'ready',
+                    'ready_at' => now(),
+                ]);
+            }
+        }
     }
 
     public function refreshOrder()
@@ -405,10 +486,11 @@ class PosOrder extends Component
             $qty++;
         }
 
-        // Reconstruye conservando las opciones del producto
+        // Reconstruye conservando las opciones y la nota del mesero
         $detail->comment = $this->buildComment(
             $this->optionsFromComment($detail->comment),
-            $qty
+            $qty,
+            $this->noteFromComment($detail->comment)
         );
 
         $detail->save();
@@ -430,10 +512,11 @@ class PosOrder extends Component
 
         $qty = max(0, $qty - 1);
 
-        // Reconstruye conservando las opciones del producto
+        // Reconstruye conservando las opciones y la nota del mesero
         $detail->comment = $this->buildComment(
             $this->optionsFromComment($detail->comment),
-            $qty
+            $qty,
+            $this->noteFromComment($detail->comment)
         );
 
         $detail->save();
@@ -461,6 +544,47 @@ class PosOrder extends Component
 
         $detail->subtotal =
             $value * $detail->quantity;
+
+        $detail->save();
+
+        $this->refreshOrder();
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | NOTA PARA COCINA
+    |--------------------------------------------------------------------------
+    | Texto libre que el mesero escribe por item del carrito (ej. "sin
+    | cebolla", "extra picante"). Se guarda dentro del mismo campo comment,
+    | como token NOTA=..., preservando las opciones y el empaque ya
+    | elegidos. No requiere reenviar a cocina para guardarse, pero si el
+    | item ya fue enviado, el ticket original en KitchenOrderDetail no se
+    | actualiza retroactivamente — solo aplica a partir del próximo envío.
+    */
+
+    public function updateItemNote($detailId, $value)
+    {
+        $detail = OrderDetail::findOrFail($detailId);
+
+        $note = trim((string) $value);
+
+        if (mb_strlen($note) > 120) {
+            $note = mb_substr($note, 0, 120);
+        }
+
+        preg_match(
+            '/EMPAQUE=(\d+)/',
+            $detail->comment ?? '',
+            $matches
+        );
+
+        $packaging = (int) ($matches[1] ?? 0);
+
+        $detail->comment = $this->buildComment(
+            $this->optionsFromComment($detail->comment),
+            $packaging,
+            $note
+        );
 
         $detail->save();
 
@@ -556,6 +680,16 @@ class PosOrder extends Component
 
             $unitPrice = $detail->manual_price ?? $detail->price;
 
+            // El mesero cambió el precio manualmente (ej. media porción de
+            // Chunchullo/Rellena). En vez de una columna nueva, se codifica
+            // en el comment que viaja a cocina, igual patrón que EMPAQUE=N.
+            $kitchenComment = $detail->comment;
+
+            if (! is_null($detail->manual_price)) {
+                $kitchenComment = 'PRECIO_AJUSTADO=' . (int) $unitPrice
+                    . ($kitchenComment ? '|' . $kitchenComment : '');
+            }
+
             // Una fila por cada estación asignada al producto: una picada
             // que va a Parrilla y a Picadas genera 2 tickets, uno en cada
             // board/despacho, cada uno marcándose listo por separado.
@@ -569,7 +703,7 @@ class PosOrder extends Component
                     'quantity'           => $detail->quantity,
                     'price'              => $unitPrice,
                     'subtotal'           => $detail->subtotal,
-                    'comment'            => $this->kitchenNote($detail->comment),
+                    'comment'            => $kitchenComment,
                 ]);
             }
 

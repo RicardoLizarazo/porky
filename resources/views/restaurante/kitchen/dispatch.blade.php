@@ -301,10 +301,13 @@
         }
     </style>
 
-    <div class="board-header">
+        <div class="board-header">
         <h1 class="station-name">
             <i class="fas fa-check-circle"></i>
             Despacho — {{ strtoupper($stationLabel) }}
+            @unless($canViewAll)
+                <span class="own-orders-tag">MIS PEDIDOS</span>
+            @endunless
         </h1>
  
         <div class="pending-count">
@@ -377,9 +380,25 @@
                         {{-- Solo los productos que corresponden a estas estaciones --}}
                         @foreach($items as $item)
  
-                            <div class="product-line" style="font-size: 1.4rem; margin-bottom: 4px;">
+                            @php
+                                $adjustedPrice = null;
+                                $displayComment = $item->comment;
+ 
+                                if (preg_match('/PRECIO_AJUSTADO=(\d+)\|?/', $item->comment ?? '', $m)) {
+                                    $adjustedPrice = (int) $m[1];
+                                    $displayComment = trim(str_replace($m[0], '', $item->comment));
+                                }
+                            @endphp
+ 
+                            <div class="product-line compact">
                                 <span class="qty">{{ $item->quantity }}x</span>
                                 {{ strtoupper($item->product_name) }}
+                                @if($adjustedPrice !== null)
+                                    <span class="adjusted-tag">
+                                        <i class="fas fa-balance-scale"></i>
+                                        ${{ number_format($adjustedPrice,0,',','.') }}
+                                    </span>
+                                @endif
                                 @if($isCombined)
                                     <span class="chip floor-chip" style="font-size:.7rem; vertical-align: middle;">
                                         {{ $item->station?->name }}
@@ -387,10 +406,10 @@
                                 @endif
                             </div>
  
-                            @if($item->comment)
-                                <div class="comment-box" style="margin-bottom: 10px;">
+                            @if($displayComment)
+                                <div class="comment-box compact">
                                     <strong><i class="fas fa-exclamation-triangle"></i> Observación:</strong>
-                                    {{ $item->comment }}
+                                    {{ $displayComment }}
                                 </div>
                             @endif
  

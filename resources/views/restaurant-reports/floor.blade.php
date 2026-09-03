@@ -18,7 +18,7 @@
 @stop
 
 @section('css')
-    @vite(['resources/css/app.css'])
+    @vite(['resources/sass/app.scss'])
 @stop
 
 @section('js')

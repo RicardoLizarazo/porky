@@ -36,7 +36,7 @@ class ProductsTable extends DataTableComponent
             Column::make("ID", "id")
                 ->sortable(),
 
-            // 🔥 PRODUCTO 
+            // PRODUCTO 
             Column::make("Producto")
                 ->label(fn($row) => $row->product_info)
                 ->html()
@@ -52,17 +52,17 @@ class ProductsTable extends DataTableComponent
                     })
                 ),
 
-            // 📂 Categoría
+            // Categoria
             Column::make("Categoría", "category.name")
                 ->sortable()
                 ->searchable(),
 
-            // 💲 Precio
+            // Precio
             Column::make("Precio", "price")
                 ->sortable()
                 ->format(fn($value) => '$ ' . number_format($value, 0, ',', '.')),
 
-            // 📦 Empaque
+            // Empaque
             Column::make("Empaque", "packaging_cost")
                 ->sortable()
                 ->format(fn($value) => $value > 0 
@@ -70,14 +70,14 @@ class ProductsTable extends DataTableComponent
                     : '<span class="text-muted">Sin costo</span>')
                 ->html(),
 
-            // 👁️ Visible
+            //  Visible
             Column::make("Visible", "is_visible")
                 ->format(fn($value) => $value 
                     ? '<span class="badge badge-info">Sí</span>' 
                     : '<span class="badge badge-secondary">No</span>')
                 ->html(),
 
-            // 🔥 Estado
+            // Estado
             Column::make("Estado", "is_active")
                 ->sortable()
                 ->format(fn($value) => $value 
@@ -85,12 +85,12 @@ class ProductsTable extends DataTableComponent
                     : '<span class="badge badge-danger">Inactivo</span>')
                 ->html(),
 
-            // 📅 Fecha
+            // Fecha
             Column::make("Creado", "created_at")
                 ->sortable()
                 ->format(fn($value) => $value ? $value->format('d/m/Y') : ''),
 
-            // ⚙️ Acciones
+            // Acciones
             Column::make("Acciones", "id")
                 ->format(function($value, $row) {
                     return '<div class="table-actions">' . 
@@ -108,6 +108,6 @@ class ProductsTable extends DataTableComponent
     {
         return Product::query()
             ->with('category')
-            ->select('products.*'); // 🔥 Especificar products.* para evitar ambigüedad
+            ->select('products.*');
     }
 }

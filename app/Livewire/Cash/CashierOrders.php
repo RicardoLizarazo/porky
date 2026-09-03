@@ -43,6 +43,8 @@ class CashierOrders extends Component
         'address' => '',
         'city' => '',
     ];
+    
+    public $isProcessingPayment = false;
 
     /*
     |--------------------------------------------------------------------------
@@ -80,6 +82,8 @@ class CashierOrders extends Component
         // Se congela la sesión activa en el momento de abrir el modal, para
         // que el pago se aplique a la caja correcta aunque el usuario cambie
         // de pestaña mientras cobra.
+        $this->isProcessingPayment = false;
+        
         $this->orderSessionId = $this->activeSessionId;
 
         $this->invoice_requested = false;
@@ -195,223 +199,235 @@ class CashierOrders extends Component
 
     public function pay()
     {
-        $this->validate();
-
-        $payments = collect($this->payments);
-
-        /*
-        |--------------------------------------------------------------------------
-        | VALIDAR SOLO UN PAGO EN EFECTIVO
-        |--------------------------------------------------------------------------
-        */
-
-        if (
-            $payments
-                ->where('payment_method', 'Efectivo')
-                ->count() > 1
-        ) {
-            $this->addError(
-                'payments',
-                'Solo puede existir un pago en efectivo.'
-            );
-
+        if ($this->isProcessingPayment) {
             return;
         }
-
-        /*
-        |--------------------------------------------------------------------------
-        | VALIDAR SALDO PENDIENTE
-        |--------------------------------------------------------------------------
-        */
-
-        if ($this->remaining > 0) {
-
-            $this->addError(
-                'payments',
-                'Aún faltan $' . number_format($this->remaining, 0, ',', '.')
-                . ' para completar el pago.'
-            );
-
-            return;
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-        | CALCULAR EFECTIVO NECESARIO
-        |--------------------------------------------------------------------------
-        */
-
-        $electronicTotal = $payments
-
-            ->whereIn('payment_method', [
-                'Nequi',
-                'Daviplata',
-                'QR',
-            ])
-
-            ->sum('amount');
-
-        $cashRequired = max(
-            $this->order->total - $electronicTotal,
-            0
-        );
-
-        /*
-        |--------------------------------------------------------------------------
-        | VALIDAR EFECTIVO
-        |--------------------------------------------------------------------------
-        */
-
-        $cashPayment = $payments
-            ->firstWhere('payment_method', 'Efectivo');
-
-        if ($cashPayment) {
-
-            if ($cashPayment['amount'] < $cashRequired) {
-
-                $this->addError(
-                    'payments',
-                    'El cliente entregó $'
-                    . number_format($cashPayment['amount'],0,',','.')
-                    . ' en efectivo y se requieren al menos $'
-                    . number_format($cashRequired,0,',','.')
-                );
-
-                return;
-            }
-
+    
+        $this->isProcessingPayment = true;
+    
+        try {
+            
+            $this->validate();
+    
+            $payments = collect($this->payments);
+    
             /*
             |--------------------------------------------------------------------------
-            | SOLO SE REGISTRA EL VALOR APLICADO AL PEDIDO
+            | VALIDAR SOLO UN PAGO EN EFECTIVO
             |--------------------------------------------------------------------------
             */
-
-            $payments = $payments->map(function ($payment) use ($cashRequired) {
-
-                if ($payment['payment_method'] === 'Efectivo') {
-                    $payment['amount'] = $cashRequired;
+    
+            if (
+                $payments
+                    ->where('payment_method', 'Efectivo')
+                    ->count() > 1
+            ) {
+                $this->addError(
+                    'payments',
+                    'Solo puede existir un pago en efectivo.'
+                );
+    
+                return;
+            }
+    
+            /*
+            |--------------------------------------------------------------------------
+            | VALIDAR SALDO PENDIENTE
+            |--------------------------------------------------------------------------
+            */
+    
+            if ($this->remaining > 0) {
+    
+                $this->addError(
+                    'payments',
+                    'Aún faltan $' . number_format($this->remaining, 0, ',', '.')
+                    . ' para completar el pago.'
+                );
+    
+                return;
+            }
+    
+            /*
+            |--------------------------------------------------------------------------
+            | CALCULAR EFECTIVO NECESARIO
+            |--------------------------------------------------------------------------
+            */
+    
+            $electronicTotal = $payments
+    
+                ->whereIn('payment_method', [
+                    'Nequi',
+                    'Daviplata',
+                    'QR',
+                ])
+    
+                ->sum('amount');
+    
+            $cashRequired = max(
+                $this->order->total - $electronicTotal,
+                0
+            );
+    
+            /*
+            |--------------------------------------------------------------------------
+            | VALIDAR EFECTIVO
+            |--------------------------------------------------------------------------
+            */
+    
+            $cashPayment = $payments
+                ->firstWhere('payment_method', 'Efectivo');
+    
+            if ($cashPayment) {
+    
+                if ($cashPayment['amount'] < $cashRequired) {
+    
+                    $this->addError(
+                        'payments',
+                        'El cliente entregó $'
+                        . number_format($cashPayment['amount'],0,',','.')
+                        . ' en efectivo y se requieren al menos $'
+                        . number_format($cashRequired,0,',','.')
+                    );
+    
+                    return;
                 }
-
-                return $payment;
+    
+                /*
+                |--------------------------------------------------------------------------
+                | SOLO SE REGISTRA EL VALOR APLICADO AL PEDIDO
+                |--------------------------------------------------------------------------
+                */
+    
+                $payments = $payments->map(function ($payment) use ($cashRequired) {
+    
+                    if ($payment['payment_method'] === 'Efectivo') {
+                        $payment['amount'] = $cashRequired;
+                    }
+    
+                    return $payment;
+                });
+            }
+    
+            /*
+            |--------------------------------------------------------------------------
+            | VALIDAR CAJA ABIERTA
+            |--------------------------------------------------------------------------
+            */
+    
+            $session = CashSession::query()
+    
+                ->open()
+    
+                ->where('user_id', auth()->id())
+    
+                ->where('id', $this->orderSessionId)
+    
+                ->first();
+    
+            if (!$session) {
+    
+                $this->dispatch(
+                    'swal',
+                    icon: 'error',
+                    title: 'La caja de esta cuenta ya no está abierta. Verifica tus cajas activas.'
+                );
+    
+                return;
+            }
+    
+            /*
+            |--------------------------------------------------------------------------
+            | GUARDAR
+            |--------------------------------------------------------------------------
+            */
+    
+            DB::transaction(function () use ($session, $payments) {
+    
+                foreach ($payments as $payment) {
+    
+                    CashPayment::create([
+    
+                        'order_id' => $this->order->id,
+    
+                        'cash_session_id' => $session->id,
+    
+                        'cash_register_id' => $session->cash_register_id,
+    
+                        'user_id' => auth()->id(),
+    
+                        'payment_method' => $payment['payment_method'],
+    
+                        'amount' => $payment['amount'],
+                    ]);
+                }
+    
+                $this->order->update([
+    
+                    'cash_register_id' => $session->cash_register_id,
+    
+                    'cash_session_id' => $session->id,
+    
+                    'status_id' => 5,
+    
+                    'is_paid' => true,
+    
+                    'paid_at' => now(),
+    
+                    'closed_at' => now(),
+    
+                    'invoice_requested' => $this->invoice_requested,
+                ]);
+    
+                if ($this->invoice_requested) {
+                
+                    $this->validate([
+                
+                        'invoice.document_type' => 'required',
+                
+                        'invoice.document' => 'required',
+                
+                        'invoice.name' => 'required',
+                
+                        'invoice.phone' => 'required',
+                
+                        'invoice.email' => 'nullable|email',
+                
+                        'invoice.address' => 'nullable',
+                    ]);
+                
+                    $this->order->invoice()->create([
+                
+                        'document_type' => $this->invoice['document_type'],
+                
+                        'document'      => $this->invoice['document'],
+                
+                        'name'          => $this->invoice['name'],
+                
+                        'phone'         => $this->invoice['phone'],
+                
+                        'email'         => $this->invoice['email'],
+                
+                        'address'       => $this->invoice['address'],
+                    ]);
+                }
+    
+                if ($this->order->table_id) {
+    
+                    $this->order->diningTable?->releaseWithMerges();
+                }
             });
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-        | VALIDAR CAJA ABIERTA
-        |--------------------------------------------------------------------------
-        */
-
-        $session = CashSession::query()
-
-            ->open()
-
-            ->where('user_id', auth()->id())
-
-            ->where('id', $this->orderSessionId)
-
-            ->first();
-
-        if (!$session) {
-
+    
+            $this->dispatch('close-payment-modal');
+    
             $this->dispatch(
                 'swal',
-                icon: 'error',
-                title: 'La caja de esta cuenta ya no está abierta. Verifica tus cajas activas.'
+                icon: 'success',
+                title: 'Pago registrado correctamente'
             );
-
-            return;
+            
+        } finally {
+            $this->isProcessingPayment = false;
         }
-
-        /*
-        |--------------------------------------------------------------------------
-        | GUARDAR
-        |--------------------------------------------------------------------------
-        */
-
-        DB::transaction(function () use ($session, $payments) {
-
-            foreach ($payments as $payment) {
-
-                CashPayment::create([
-
-                    'order_id' => $this->order->id,
-
-                    'cash_session_id' => $session->id,
-
-                    'cash_register_id' => $session->cash_register_id,
-
-                    'user_id' => auth()->id(),
-
-                    'payment_method' => $payment['payment_method'],
-
-                    'amount' => $payment['amount'],
-                ]);
-            }
-
-            $this->order->update([
-
-                'cash_register_id' => $session->cash_register_id,
-
-                'cash_session_id' => $session->id,
-
-                'status_id' => 5,
-
-                'is_paid' => true,
-
-                'paid_at' => now(),
-
-                'closed_at' => now(),
-
-                'invoice_requested' => $this->invoice_requested,
-            ]);
-
-            if ($this->invoice_requested) {
-            
-                $this->validate([
-            
-                    'invoice.document_type' => 'required',
-            
-                    'invoice.document' => 'required',
-            
-                    'invoice.name' => 'required',
-            
-                    'invoice.phone' => 'required',
-            
-                    'invoice.email' => 'nullable|email',
-            
-                    'invoice.address' => 'nullable',
-                ]);
-            
-                $this->order->invoice()->create([
-            
-                    'document_type' => $this->invoice['document_type'],
-            
-                    'document'      => $this->invoice['document'],
-            
-                    'name'          => $this->invoice['name'],
-            
-                    'phone'         => $this->invoice['phone'],
-            
-                    'email'         => $this->invoice['email'],
-            
-                    'address'       => $this->invoice['address'],
-                ]);
-            }
-
-            if ($this->order->table_id) {
-
-                $this->order->diningTable?->releaseWithMerges();
-            }
-        });
-
-        $this->dispatch('close-payment-modal');
-
-        $this->dispatch(
-            'swal',
-            icon: 'success',
-            title: 'Pago registrado correctamente'
-        );
     }
     
     public function confirmCancelOrder($orderId)

@@ -15,6 +15,8 @@ class WaiterReport extends Component
 
     public $salesByWaiter = [];
 
+    public $paymentMethods = [];
+
     public function mount()
     {
         $this->mountFilters();
@@ -23,7 +25,22 @@ class WaiterReport extends Component
 
     public function loadReport()
     {
-        $this->salesByWaiter = DB::table('orders')
+        // 1. Métodos de pago existentes en el rango filtrado (dinámico)
+        $this->paymentMethods = DB::table('cash_payments')
+            ->join('orders', 'cash_payments.order_id', '=', 'orders.id')
+            ->where('orders.is_paid', 1)
+            ->when($this->location_id, fn($q) => $q->where('orders.location_id', $this->location_id))
+            ->when($this->floor_id, fn($q) => $q->where('orders.floor_id', $this->floor_id))
+            ->whereBetween('orders.created_at', $this->getDateRange())
+            ->distinct()
+            ->pluck('cash_payments.payment_method')
+            ->filter()
+            ->sort()
+            ->values()
+            ->toArray();
+
+        // 2. Base: pedidos por mesero
+        $waiters = DB::table('orders')
             ->leftJoin('users', 'orders.user_id', '=', 'users.id')
             ->select(
                 'users.id as user_id',
@@ -38,6 +55,43 @@ class WaiterReport extends Component
             ->groupBy('users.id', 'users.name')
             ->orderByDesc('total')
             ->get();
+
+        // 3. Desglose por método de pago, agrupado por mesero
+        $paymentsByWaiter = DB::table('cash_payments')
+            ->join('orders', 'cash_payments.order_id', '=', 'orders.id')
+            ->leftJoin('users', 'orders.user_id', '=', 'users.id')
+            ->select(
+                'users.id as user_id',
+                'cash_payments.payment_method',
+                DB::raw('SUM(cash_payments.amount) as amount')
+            )
+            ->where('orders.is_paid', 1)
+            ->when($this->location_id, fn($q) => $q->where('orders.location_id', $this->location_id))
+            ->when($this->floor_id, fn($q) => $q->where('orders.floor_id', $this->floor_id))
+            ->whereBetween('orders.created_at', $this->getDateRange())
+            ->groupBy('users.id', 'cash_payments.payment_method')
+            ->get()
+            ->groupBy('user_id');
+
+        // 4. Combinar
+        $this->salesByWaiter = $waiters->map(function ($waiter) use ($paymentsByWaiter) {
+
+            $methodTotals = [];
+            foreach ($this->paymentMethods as $method) {
+                $methodTotals[$method] = 0;
+            }
+
+            if (isset($paymentsByWaiter[$waiter->user_id])) {
+                foreach ($paymentsByWaiter[$waiter->user_id] as $payment) {
+                    $methodTotals[$payment->payment_method] =
+                        ($methodTotals[$payment->payment_method] ?? 0) + $payment->amount;
+                }
+            }
+
+            $waiter->payments = $methodTotals;
+
+            return $waiter;
+        });
     }
 
     public function exportExcel()

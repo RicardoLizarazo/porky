@@ -2,31 +2,60 @@
 <html>
 <head>
 <meta charset="utf-8">
+
 <style>
-body {
-    width: 58mm;
-    font-family: monospace;
-    font-size: 10px;
+/* =========================
+   CONFIGURACIÓN IMPRESIÓN
+========================= */
+@page {
+    size: 58mm auto;
+    margin: 1.5mm;
 }
+
+/* =========================
+   GENERAL
+========================= */
+body {
+    width: 54mm;
+    margin: 0 auto;
+    padding: 0;
+    font-family: monospace;
+    font-size: 11px;
+    line-height: 1.15;
+    color: #000;
+}
+
 .center { text-align: center; }
+
 .row {
     display: flex;
     justify-content: space-between;
+    align-items: flex-start;
+    gap: 5px;
 }
+
+.row span:last-child {
+    text-align: right;
+    white-space: nowrap;
+}
+
 hr {
     border: none;
     border-top: 1px dashed #000;
     margin: 4px 0;
 }
+
+strong { font-weight: bold; }
 </style>
 </head>
+
 <body onload="window.print()">
-{{-- 🖼️ LOGO --}}
+{{--  LOGO --}}
 <div class="center">
-    <img src="{{ asset('vendor/adminlte/dist/img/logo.png') }}" style="width: 100px;">
+    <img src="{{ asset('vendor/adminlte/dist/img/logo.png') }}" style="width: 100px; max-width: 100%;">
 </div>
 <br>
-{{-- 🏪 ENCABEZADO --}}
+{{-- ENCABEZADO --}}
 <div class="center">
     <strong>Piqueteadero Porky de la 105</strong><br>
     Crr. 103F 139 - 20<br>
@@ -39,7 +68,11 @@ hr {
     <strong>Pedido #{{ $order->id }}</strong>
 </div>
 <hr>
-{{-- 🍽️ MESA: pedido consumido en el local, nunca se pide nombre de cliente --}}
+<div class="center">
+    {{ \Carbon\Carbon::now()->translatedFormat('d/m/Y') }} - {{ \Carbon\Carbon::now()->format('h:i A') }}
+</div>
+<hr>
+{{-- MESA: pedido consumido en el local, nunca se pide nombre de cliente --}}
 <div>
     Mesa: {{ $order->diningTable?->name }}<br>
     @if($order->floor)
@@ -50,7 +83,7 @@ hr {
     @endif
 </div>
 <hr>
-{{-- 🛒 PRODUCTOS --}}
+{{-- PRODUCTOS --}}
 @foreach($order->details as $item)
     <div>{{ $item->product_name }}</div>
     <div class="row">
@@ -59,7 +92,7 @@ hr {
     </div>
 @endforeach
 <hr>
-{{-- 💰 RESUMEN --}}
+{{-- RESUMEN --}}
 <div class="row">
     <span>Subtotal</span>
     <span>${{ number_format($order->subtotal) }}</span>
@@ -71,24 +104,25 @@ hr {
 </div>
 @endif
 <hr>
-{{-- 🔥 TOTAL --}}
-<div class="row">
+{{-- TOTAL --}}
+<div class="row" style="font-size:13px;">
     <strong>TOTAL</strong>
     <strong>${{ number_format($order->total) }}</strong>
 </div>
 <hr>
-{{-- 📝 INDICACIONES --}}
+{{-- INDICACIONES --}}
 @if($order->indication)
 Indicaciones:<br>
 {{ $order->indication }}<br>
+<hr>
 @endif
-{{-- 💬 COMENTARIOS --}}
+{{-- COMENTARIOS --}}
 @if($order->comment)
 Comentarios:<br>
 {{ $order->comment }}<br>
-@endif
 <hr>
-{{-- 🔳 QR --}}
+@endif
+{{-- QR --}}
 <div class="center">
     {!! QrCode::size(80)->generate($order->id) !!}
 </div>

@@ -28,9 +28,9 @@ class Menu extends Component
 
         $user = auth()->user();
 
-        $isAdmin = $user && $user->hasAnyRole(['Administrador', 'Consulta']);
+        $isAdmin = $user && $user->hasAnyRole(['Administrador', 'Consulta', 'Mesero']);
 
-        // 🧭 CATEGORÍAS
+        // CATEGORÍAS
         $categories = Category::query()
             ->where('is_active', true)
 
@@ -42,18 +42,18 @@ class Menu extends Component
             ->orderBy('name')
             ->get();
 
-        // 🍔 PRODUCTOS
+        // PRODUCTOS
         $products = Product::query()
             ->with('category')
             ->where('is_active', true)
 
-            // 🔐 Visibilidad por rol
+            // Visibilidad por rol
             ->when(
                 !$isAdmin,
                 fn($q) => $q->where('is_visible', true)
             )
 
-            // 🔗 Asegura coherencia con categoría
+            // Asegura coherencia con categoría
             ->whereHas('category', function ($q) use ($isAdmin) {
                 $q->where('is_active', true);
 
@@ -62,12 +62,12 @@ class Menu extends Component
                 }
             })
 
-            // 🧭 Filtro por categoría
+            // Filtro por categoría
             ->when($this->category_id, function ($q) {
                 $q->where('category_id', $this->category_id);
             })
 
-            // 🔍 Búsqueda
+            // Búsqueda
             ->when($this->search, function ($q) {
                 $q->where('name', 'like', '%' . $this->search . '%');
             })

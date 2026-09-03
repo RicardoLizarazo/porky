@@ -369,10 +369,7 @@ return [
             'text' => 'Mis pedidos',
             'url'  => 'mis-pedidos',
             'icon' => 'fas fa-receipt',
-            'visible' => function () {
-                return auth()->guard('customer')->check()
-                    && request()->user('web') === null;
-            },
+            'can'  => 'customer.only',
         ],
         [
             'text' => 'Dashboard',
@@ -427,90 +424,116 @@ return [
                     'can' => 'products.view',
                     'active' => ['restaurante/products*'], 
                 ],
-                [
-                    'text'=>'Reglas Productos',
-                    'url' =>'product-rules',
-                    'icon' => 'fas fa-random',
-                    'can' => 'product-rules.view',
-                ],
             ],
         ],
-[
-    'text' => 'Cocina',
-    'icon' => 'fas fa-fire',
-    'submenu' => [
-
         [
-            'text'   => 'Parrilla',
-            'url'    => 'kitchen-board/1',
-            'icon'   => 'fas fa-fire text-danger',
-            'active' => ['kitchen-board/1'],
-        ],
+            'text' => 'Cocina',
+            'url'  => '#',
+            'icon' => 'fas fa-fire',
+            'submenu' => [
+                [
+                    'text'   => 'Parrilla',
+                    'url'    => 'kitchen-board/1',
+                    'icon'   => 'fas fa-fire text-danger',
+                    'can'    => 'kitchen.view',
+                    'active' => ['kitchen-board/1'],
+                ],
+                [
+                    'text'   => 'Sopas',
+                    'url'    => 'kitchen-board/2',
+                    'icon'   => 'fas fa-fire text-info',
+                    'can'    => 'kitchen.view',
+                    'active' => ['kitchen-board/2'],
+                ],
 
-        [
-            'text'   => 'Sopas',
-            'url'    => 'kitchen-board/2',
-            'icon'   => 'fas fa-fire text-info',
-            'active' => ['kitchen-board/2'],
-        ],
+                [
+                    'text'   => 'Picadas',
+                    'url'    => 'kitchen-board/3',
+                    'icon'   => 'fas fa-fire text-warning',
+                    'can'    => 'kitchen.view',
+                    'active' => ['kitchen-board/3'],
+                ],
+                [
+                    'text'   => 'Bebidas',
+                    'url'    => 'kitchen-board/4',
+                    'icon'   => 'fas fa-fire text-success',
+                    'can'    => 'kitchen.view',
+                    'active' => ['kitchen-board/4'],
+                ],
+                [
+                    'text'   => 'Jugos',
+                    'url'    => 'kitchen-board/5',
+                    'icon'   => 'fas fa-fire text-info',
+                    'can'    => 'kitchen.view',
+                    'active' => ['kitchen-board/5'],
+                ],
+                [
+                    'text'   => 'Parrilla + Sopas (TV)',
+                    'url'    => 'kitchen-board/1,2',
+                    'icon'   => 'fas fa-fire text-danger',
+                    'can'    => 'kitchen.view',
+                    'active' => ['kitchen-board/1,2'],
+                ],
+                [
+                    'text'   => 'Parrilla + Picadas (TV)',
+                    'url'    => 'kitchen-board/1,2',
+                    'icon'   => 'fas fa-fire text-danger',
+                    'can'    => 'kitchen.view',
+                    'active' => ['kitchen-board/1,2'],
+                ],
 
-        [
-            'text'   => 'Picadas',
-            'url'    => 'kitchen-board/3',
-            'icon'   => 'fas fa-fire text-warning',
-            'active' => ['kitchen-board/3'],
-        ],
+                [
+                    'text'   => 'Despacho Parrilla',
+                    'url'    => 'kitchen-dispatch/1',
+                    'icon'   => 'fas fa-check-circle text-danger',
+                    'can' => 'kitchen.dispatch',
+                    'active' => ['kitchen-dispatch/1'],
+                ],
+                [
+                    'text'   => 'Despacho Sopas',
+                    'url'    => 'kitchen-dispatch/2',
+                    'icon'   => 'fas fa-check-circle text-info',
+                    'can' => 'kitchen.dispatch',
+                    'active' => ['kitchen-dispatch/2'],
+                ],
+                [
+                    'text'   => 'Despacho Picadas',
+                    'url'    => 'kitchen-dispatch/3',
+                    'icon'   => 'fas fa-check-circle text-warning',
+                    'can' => 'kitchen.dispatch',
+                    'active' => ['kitchen-dispatch/3'],
+                ],
+                [
+                    'text'   => 'Despacho Bebidas',
+                    'url'    => 'kitchen-dispatch/4',
+                    'icon'   => 'fas fa-check-circle text-success',
+                    'can' => 'kitchen.dispatch',
+                    'active' => ['kitchen-dispatch/4'],
+                ],
+                [
+                    'text'   => 'Despacho Jugos',
+                    'url'    => 'kitchen-dispatch/5',
+                    'icon'   => 'fas fa-check-circle text-info',
+                    'can'    => 'kitchen.dispatch',
+                    'active' => ['kitchen-dispatch/5'],
+                ],
+                [
+                    'text'   => 'Despacho Parrilla + Sopas',
+                    'url'    => 'kitchen-dispatch/1,2',
+                    'icon'   => 'fas fa-check-circle text-danger',
+                    'can'    => 'kitchen.dispatch',
+                    'active' => ['kitchen-dispatch/1,2'],
+                ],
+                [
+                    'text'   => 'Despacho Parrilla + Picadas',
+                    'url'    => 'kitchen-dispatch/1,3',
+                    'icon'   => 'fas fa-check-circle text-danger',
+                    'can'    => 'kitchen.dispatch',
+                    'active' => ['kitchen-dispatch/1,2'],
+                ],
 
-        [
-            'text'   => 'Bebidas',
-            'url'    => 'kitchen-board/4',
-            'icon'   => 'fas fa-fire text-success',
-            'active' => ['kitchen-board/4'],
+            ],
         ],
-
-        [
-            'text'   => 'Jugos',
-            'url'    => 'kitchen-board/5',
-            'icon'   => 'fas fa-fire text-success',
-            'active' => ['kitchen-board/5'],
-        ],
-
-        [
-            'text'   => 'Despacho Parrilla',
-            'url'    => 'kitchen-dispatch/1',
-            'icon'   => 'fas fa-check-circle text-danger',
-            'active' => ['kitchen-dispatch/1'],
-        ],
-
-        [
-            'text'   => 'Despacho Sopas',
-            'url'    => 'kitchen-dispatch/2',
-            'icon'   => 'fas fa-check-circle text-info',
-            'active' => ['kitchen-dispatch/2'],
-        ],
-
-        [
-            'text'   => 'Despacho Picadas',
-            'url'    => 'kitchen-dispatch/3',
-            'icon'   => 'fas fa-check-circle text-warning',
-            'active' => ['kitchen-dispatch/3'],
-        ],
-
-        [
-            'text'   => 'Despacho Bebidas',
-            'url'    => 'kitchen-dispatch/4',
-            'icon'   => 'fas fa-check-circle text-success',
-            'active' => ['kitchen-dispatch/4'],
-        ],
-
-        [
-            'text'   => 'Despacho Jugos',
-            'url'    => 'kitchen-dispatch/5',
-            'icon'   => 'fas fa-check-circle text-success',
-            'active' => ['kitchen-dispatch/5'],
-        ],
-    ],
-],
         [
             'text' => 'Pedidos',
             'url'  => 'admin/settings',
@@ -615,6 +638,13 @@ return [
                     'icon' => 'fas fa-user-tie',
                     'can'  => 'restaurant_reports.waiter',
                     'active' => ['restaurant-reports/waiter*'],
+                ],
+                [
+                    'text' => 'Historial Despachos',
+                    'url'  => 'kitchen-dispatch-history',
+                    'icon' => 'fas fa-history nav-icon',
+                    'can'  => 'kitchen_dispatch.view_all',
+                    'active' => ['kitchen_dispatch/view_all*'],
                 ],
             ],
         ],

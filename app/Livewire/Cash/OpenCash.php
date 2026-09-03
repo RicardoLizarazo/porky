@@ -106,4 +106,4 @@ class OpenCash extends Component
             ]
         );
     }
-} 
+}

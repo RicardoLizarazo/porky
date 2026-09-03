@@ -11,7 +11,7 @@
     </button>
 
     {{-- ✏️ EDITAR --}}
-    @if($row->status_id == 1)
+    @if(in_array($row->status_id, [1, 2]))
         <button 
             @click="window.dispatchEvent(new CustomEvent('toggle-loading', { detail: true })); $dispatch('edit-order', { id: {{ $row->id }} })"
             class="btn action-btn action-edit"
@@ -53,6 +53,7 @@
     </div>
 
     {{-- 🚚 DOMICILIARIO --}}
+
     @php
         static $deliveryUsers;
 
@@ -108,7 +109,6 @@
 
         </div>
     </div>
-
 
     {{-- 💳 MÉTODO DE PAGO --}}
     <div class="btn-group">

@@ -19,10 +19,10 @@ class Order extends Model
     const STATUS_DELIVERED = 5;
     const STATUS_CANCELLED = 6;
     const STATUS_MERGED    = 7;
-
+    
     /*
     |--------------------------------------------------------------------------
-    | CONFIGURACI脫N
+    | CONFIGURACIÓN
     |--------------------------------------------------------------------------
     */
 
@@ -163,7 +163,7 @@ class Order extends Model
         return $this->belongsTo(Customer::class, 'customer_id');
     }
 
-    // Usuario admin que gestion贸 el pedido
+    // Usuario admin que gestionó el pedido
     public function user()
     {
         return $this->belongsTo(User::class);
@@ -199,7 +199,7 @@ class Order extends Model
         return $this->belongsTo(CashRegister::class);
     }
 
-    // Sesi贸n de caja
+    // Sesión de caja
     public function cashSession()
     {
         return $this->belongsTo(CashSession::class);
@@ -242,15 +242,16 @@ class Order extends Model
             CashPayment::class
         );
     }
-
+    
+    // Cancelacion
     public function cancellation()
-{
-    return $this->hasOne(OrderCancellation::class);
-}
+    {
+        return $this->hasOne(OrderCancellation::class);
+    }
 
     /*
     |--------------------------------------------------------------------------
-    | FACTURA ELECTR脫NICA
+    | FACTURA ELECTRÓNICA
     |--------------------------------------------------------------------------
     */
 

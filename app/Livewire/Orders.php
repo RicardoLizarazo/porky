@@ -10,6 +10,7 @@ use App\Models\Customer;
 use App\Models\TypeOrder;
 use App\Models\StatusOrder;
 use App\Models\User;
+use App\Models\KitchenOrderDetail;
 use Livewire\Attributes\On;
 use Illuminate\Support\Facades\Auth;
 
@@ -27,8 +28,8 @@ class Orders extends Component
 
     public $category_id = null;
 
-    public $order; // 🔥 para ver / editar
-    public $items = []; // 🔥 carrito interno
+    public $order;
+    public $items = [];
 
     public $customer_name;
     public $customer_phone;
@@ -45,6 +46,15 @@ class Orders extends Component
     public $total = 0;
     public $delivery_cost = 9000;
     public $packaging_total = 0;
+    
+    public $is_table_order = false;
+    public $table_name;
+    public $floor_name;
+    public $waiter_name;
+    public $payments = [];
+    public $tip = 0;
+    public $is_paid = false;
+    public $cancelledItems = [];
 
     /*
     |--------------------------------------------------------------------------
@@ -55,10 +65,9 @@ class Orders extends Component
     public function mount()
     {
         if (!Auth::user()?->can('users.view')) {
-            abort(403, 'No tienes permiso para acceder a esta sección.');
+            abort(403, 'No tienes permiso para acceder a esta secci��n.');
         }
 
-        // 🔥 leer filtro desde localStorage vía JS
         $this->dispatch('check-order-focus');
     }
 
@@ -110,7 +119,7 @@ class Orders extends Component
 
     /*
     |--------------------------------------------------------------------------
-    | 👁️ VER PEDIDO (FACTURA)
+    |  VER PEDIDO (FACTURA)
     |--------------------------------------------------------------------------
     */
 
@@ -122,29 +131,37 @@ class Orders extends Component
             'details',
             'status',
             'type',
-            'delivery'
+            'delivery',
+            'user',          // mesero
+            'diningTable',
+            'floor',
+            'payments',
         ])->findOrFail($id);
-
+    
         $this->order_id = $order->id;
-
+    
         $this->customer_name = $order->customer?->name;
         $this->customer_phone = $order->customer?->telephone;
         $this->customer_address = $order->customer?->full_address;
-
+    
         $this->type_name = $order->type?->name;
         $this->status_name = $order->status_badge['name'];
         $this->status_color = $order->status_badge['color'];
-
+    
         $this->payment_method = $order->payment_method;
         $this->delivery_name = $order->delivery_name;
         $this->ordered_at = optional($order->ordered_at)->format('d/m/Y H:i');
-
+    
         $this->subtotal = $order->subtotal;
         $this->total = $order->total;
         $this->delivery_cost = $order->delivery_cost;
         $this->packaging_total = $order->packaging_total ?? 0;
-
-        // 🔥 detalle tipo factura
+    
+        // CARGAR OBSERVACIONES
+        $this->comment = $order->comment;
+        $this->indication = $order->indication;
+    
+        // detalle tipo factura
         $this->details = $order->details->map(function ($item) {
             return [
                 'name' => $item->product_name,
@@ -154,13 +171,57 @@ class Orders extends Component
                 'comment' => $item->comment,
             ];
         })->toArray();
+        
+        // ---- INFO DE MESA ----
+        $this->is_table_order = ! is_null($order->table_id);
+        
+        $this->table_name  = $order->diningTable?->name ?? ($order->table_id ? 'Mesa ' . $order->table_id : null);
+        $this->floor_name  = $order->floor?->name;
+        $this->waiter_name = $order->user?->name ?? 'Sin asignar';
+        
+        $this->tip     = $order->tip ?? 0;
+        $this->is_paid = (bool) $order->is_paid;
+        
+        // ---- FORMAS DE PAGO REALES ----
+        $this->payments = $order->payments->map(function ($p) {
+            return [
+                'method' => $p->payment_method,
+                'amount' => $p->amount,
+            ];
+        })->toArray();
 
+        // ---- PRODUCTOS CANCELADOS (ya enviados a cocina y luego
+        // eliminados del pedido) ----
+        // El OrderDetail original ya no existe (se borr��), as�� que la
+        // ��nica fuente de este historial es kitchen_order_details.
+        $this->cancelledItems = $this->is_table_order
+            ? KitchenOrderDetail::whereHas('kitchenOrder', function ($q) use ($order) {
+                    $q->where('order_id', $order->id);
+                })
+                ->where('status', 'cancelled')
+                ->with('resolvedBy')
+                ->orderByDesc('ready_at')
+                ->get()
+                ->map(function ($item) {
+                    return [
+                        'product_name' => $item->product_name,
+                        'quantity'     => $item->quantity,
+                        'subtotal'     => $item->subtotal,
+                        'cancelled_by' => $item->resolvedBy?->name,
+                        'cancelled_at' => $item->ready_at
+                            ? \Carbon\Carbon::parse($item->ready_at)->format('d/m/Y h:i A')
+                            : '',
+                    ];
+                })
+                ->toArray()
+            : [];
+    
         $this->dispatch('open-view-modal');
     }
 
     /*
     |--------------------------------------------------------------------------
-    | ✏️ EDITAR PEDIDO
+    | EDITAR PEDIDO
     |--------------------------------------------------------------------------
     */
 
@@ -203,7 +264,7 @@ class Orders extends Component
 
     /*
     |--------------------------------------------------------------------------
-    | 🔄 CAMBIAR ESTADO
+    | CAMBIAR ESTADO
     |--------------------------------------------------------------------------
     */
 
@@ -222,7 +283,7 @@ class Orders extends Component
 
     /*
     |--------------------------------------------------------------------------
-    | 🗑️ ELIMINAR
+    |  ELIMINAR
     |--------------------------------------------------------------------------
     */
 
@@ -237,7 +298,7 @@ class Orders extends Component
 
     /*
     |--------------------------------------------------------------------------
-    | 🛒 MANEJO DE ITEMS
+    | MANEJO DE ITEMS
     |--------------------------------------------------------------------------
     */
 
@@ -253,7 +314,7 @@ class Orders extends Component
             $items[$productId] = [
                 'product_id'     => $product->id,
                 'name'           => $product->name,
-                'price'          => (float) $product->price, // ✅ Asegurar tipo numérico
+                'price'          => (float) $product->price,
                 'packaging_cost' => (float) ($product->packaging_cost ?? 0),
                 'qty'            => 1,
             ];
@@ -282,7 +343,7 @@ class Orders extends Component
         if ($qty <= 0) {
             unset($items[$productId]);
         } else {
-            // ✅ Asegurar que se mantienen todas las propiedades del item
+            // Asegurar que se mantienen todas las propiedades del item
             if (isset($items[$productId])) {
                 $items[$productId]['qty'] = (int) $qty;
             }
@@ -294,7 +355,7 @@ class Orders extends Component
 
     /*
     |--------------------------------------------------------------------------
-    | 💰 CÁLCULOS
+    | CALCULOS
     |--------------------------------------------------------------------------
     */
     public function calculateTotals()
@@ -312,7 +373,7 @@ class Orders extends Component
 
     /*
     |--------------------------------------------------------------------------
-    | 💾 CREAR PEDIDO
+    | CREAR PEDIDO
     |--------------------------------------------------------------------------
     */
 
@@ -323,7 +384,7 @@ class Orders extends Component
             return;
         }
 
-        $this->calculateTotals(); // ✅ Asegurar cálculos actualizados
+        $this->calculateTotals();
 
         $order = Order::create([
             'customer_id'   => $this->customer_id,
@@ -332,7 +393,7 @@ class Orders extends Component
             'status_id'     => 1,
             'payment_method'=> $this->payment_method,
             'subtotal'      => $this->subtotal,
-            'packaging_total' => $this->packaging_total, // ✅ Cambiado de packagingTotal a packaging_total
+            'packaging_total' => $this->packaging_total,
             'delivery_cost'   => $this->delivery_cost,
             'total'         => $this->total,
             'total_items'   => count($this->items),
@@ -357,7 +418,7 @@ class Orders extends Component
 
     /*
     |--------------------------------------------------------------------------
-    | 💾 ACTUALIZAR PEDIDO
+    | ACTUALIZAR PEDIDO
     |--------------------------------------------------------------------------
     */
 
@@ -365,7 +426,7 @@ class Orders extends Component
     {
         $order = Order::findOrFail($this->order_id);
 
-        $this->calculateTotals(); // Asegurar cálculos actualizados
+        $this->calculateTotals();
 
         $order->update([
             'customer_id'     => $this->customer_id,
@@ -376,7 +437,7 @@ class Orders extends Component
             'packaging_total' => $this->packaging_total,
             'delivery_cost'   => $this->delivery_cost,
             'total'           => $this->total,
-            'total_items'     => count($this->items), // ✅ Agregar esta línea
+            'total_items'     => count($this->items),
             'comment'         => $this->comment,
             'indication'      => $this->indication,
         ]);
@@ -397,7 +458,7 @@ class Orders extends Component
 
         $this->dispatch('update');
         $this->dispatch('refreshDatatable');
-        $this->dispatch('success', message: 'Pedido actualizado correctamente'); // ✅ Feedback al usuario
+        $this->dispatch('success', message: 'Pedido actualizado correctamente');
     }
 
     public function updatedDeliveryCost($value)
@@ -429,13 +490,12 @@ class Orders extends Component
         ]);
 
         $this->dispatch('refreshDatatable');
-        $this->dispatch('success', message: 'Método de pago actualizado');
+        $this->dispatch('success', message: 'M��todo de pago actualizado');
     }
 
     #[On('apply-new-filter')]
     public function applyNewFilter()
     {
-        // 🔥 aquí decides cómo filtrar
         $statusNuevoId = \App\Models\StatusOrder::where('name', 'Pendiente')->value('id');
 
         $this->status_id = $statusNuevoId;

@@ -18,7 +18,7 @@ class OrdersTable extends DataTableComponent
     public function configure(): void
     {
         $this->setPrimaryKey('id')
-            ->setDefaultSort('ordered_at', 'desc')
+            ->setDefaultSort('created_at', 'desc')
             ->setPerPage(25)
             ->setSearchEnabled()
             ->setTableWrapperAttributes([
@@ -69,24 +69,42 @@ class OrdersTable extends DataTableComponent
 
                 }),
 
-            // 📦 TIPO PEDIDO
+            // TIPO PEDIDO
             Column::make("Tipo")
-                ->label(fn($row) => $row->type?->name ?? 'N/A'),
+                ->label(function ($row) {
+                    // Pedido web: comportamiento actual
+                    if (! $row->table_id) {
+                        return e($row->type?->name ?? 'N/A');
+                    }
 
-            // 💲 TOTAL
+                    // Pedido de mesa: mesa + piso
+                    $mesa = $row->diningTable?->name ?? 'Mesa ' . $row->table_id;
+                    $piso = $row->floor?->name;
+
+                    $html = '<strong><i class="fas fa-utensils mr-1"></i>' . e($mesa) . '</strong>';
+
+                    if ($piso) {
+                        $html .= '<br><small class="text-muted">' . e($piso) . '</small>';
+                    }
+
+                    return $html;
+                })
+                ->html(),
+
+            // TOTAL
             Column::make("Total")
                 ->label(fn($row) => '$ ' . number_format($row->total, 0, ',', '.'))
                 ->sortable(),
 
-            // 📦 ITEMS (desde relación)
+            // ITEMS (desde relacion)
             Column::make("Items")
             ->label(fn($row) => $row->total_items ?? 0),
 
-            // 🚚 DOMICILIARIO
+            // DOMICILIARIO
             Column::make("Domiciliario")
                 ->label(fn($row) => $row->delivery_name),
 
-            // 🔥 ESTADO (YA TIENES ACCESSOR 🔥)
+            // ESTADO (YA TIENES ACCESSOR)
             Column::make("Estado")
                 ->label(fn($row) => 
                     '<span class="badge badge-' . $row->status_badge['color'] . '">' 
@@ -95,12 +113,19 @@ class OrdersTable extends DataTableComponent
                 )
                 ->html(),
 
-            // 🕒 FECHA
-            Column::make("Fecha", "ordered_at")  // Cambia 'make' a usar el campo directamente
-                ->format(fn($value, $row) => $row->ordered_at?->format('d/m/Y H:i'))
-                ->sortable(),  // Importante: agregar sortable
+            // FECHA DE CREACION
+            Column::make("Creado", "created_at")
+                ->format(function ($value, $row) {
+                    if (! $row->created_at) {
+                        return '<small class="text-muted">Sin registro</small>';
+                    }
 
-            // ⚙️ ACCIONES
+                    return $row->created_at->format('d/m/Y H:i');
+                })
+                ->html()
+                ->sortable(),
+
+            // ACCIONES
             Column::make("Acciones", "id")
                 ->format(fn($value, $row) =>
                     view('orders.actions', compact('row'))->render()
@@ -139,6 +164,21 @@ class OrdersTable extends DataTableComponent
 
             DateFilter::make('Hasta')
                 ->filter(fn($builder, $value) => $value ? $builder->whereDate('ordered_at', '<=', $value) : null),
+                
+            SelectFilter::make('Origen', 'origin')
+                ->options([
+                    ''     => 'Todos',
+                    'web'  => 'Web / Domicilio',
+                    'mesa' => 'Mesas',
+                ])
+                ->setFilterDefaultValue('web')
+                ->filter(function (Builder $builder, string $value) {
+                    match ($value) {
+                        'mesa'  => $builder->whereNotNull('orders.table_id'),
+                        'web'   => $builder->whereNull('orders.table_id'),
+                        default => null,
+                    };
+                }),
         ];
     }
     

@@ -61,10 +61,15 @@ class KitchenBoard extends Component
         })
         ->values();
 
+        // Agrupamos por pedido, igual que en el Despacho: una sola
+        // tarjeta por mesa con todos sus productos de esta estación,
+        // en vez de una tarjeta por cada producto individual.
+        $tickets = $details->groupBy('kitchen_order_id');
+
         return view(
             'restaurante.kitchen.board',
             compact(
-                'details',
+                'tickets',
                 'stationLabel',
                 'isCombined',
                 'switcher'

@@ -30,7 +30,7 @@ class Product extends Model
         'is_active' => 'boolean',
     ];
 
-    // Agregar appends para que los accessors est茅n disponibles
+    // Agregar appends para que los accessors estén disponibles
     protected $appends = ['image_url', 'product_info'];
 
     /*
@@ -130,7 +130,7 @@ class Product extends Model
     {
         $codeHtml = !empty($this->code) 
             ? '<div class="text-muted small">' . e($this->code) . '</div>' 
-            : '<div class="text-muted small">Sin c贸digo</div>';
+            : '<div class="text-muted small">Sin código</div>';
         
         return '<div class="d-flex align-items-center">
                     <img src="' . $this->image_url . '" 

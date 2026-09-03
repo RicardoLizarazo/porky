@@ -6,8 +6,14 @@
         preg_match('/EMPAQUE=(\d+)/', $item['comment'] ?? '', $matches);
         $packagingQty = (int) ($matches[1] ?? 0);
 
-        // Todo lo que no sea el token de empaque son las opciones elegidas
+        // Nota libre del mesero para cocina, guardada como NOTA=... dentro del mismo
+        // campo comment (mismo patrón pipe-separated que EMPAQUE=N).
+        preg_match('/NOTA=(.*)$/s', $item['comment'] ?? '', $noteMatches);
+        $kitchenNote = trim($noteMatches[1] ?? '');
+
+        // Todo lo que no sea el token de empaque ni el de nota son las opciones elegidas
         $optionsText = trim(preg_replace('/\s*\|?\s*EMPAQUE=\d+/', '', $item['comment'] ?? ''));
+        $optionsText = trim(preg_replace('/\s*\|?\s*NOTA=.*$/s', '', $optionsText));
     @endphp
 
     <div class="pos-cart-item border-bottom pb-3 mb-3 {{ $sentToKitchen ? 'pos-cart-item-sent' : '' }}">
@@ -40,6 +46,23 @@
                         {{ $optionsText }}
                     </div>
                 @endif
+
+                {{-- NOTA PARA COCINA (texto libre del mesero) --}}
+                <div class="mt-2">
+                    <small class="text-muted d-block mb-1">
+                        <i class="fas fa-comment-dots mr-1"></i>
+                        Nota para cocina
+                    </small>
+
+                    <input
+                        type="text"
+                        maxlength="120"
+                        class="form-control form-control-sm pos-kitchen-note"
+                        value="{{ $kitchenNote }}"
+                        placeholder="Ej: sin cebolla, extra picante..."
+                        wire:change="updateItemNote({{ $item['id'] }}, $event.target.value)"
+                    >
+                </div>
 
                 @if($item['product']['allow_manual_price'])
                     <div class="mt-2">
@@ -225,6 +248,11 @@
 
 .pos-manual-price {
     width: 130px;
+    border-radius: 8px;
+}
+
+.pos-kitchen-note {
+    max-width: 260px;
     border-radius: 8px;
 }
 

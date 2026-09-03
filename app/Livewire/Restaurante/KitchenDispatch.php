@@ -7,6 +7,7 @@ use App\Models\KitchenOrder;
 use App\Models\KitchenOrderDetail;
 use App\Models\KitchenStation;
 use App\Livewire\Restaurante\Concerns\ResolvesKitchenStations;
+use Illuminate\Support\Facades\Auth;
 
 class KitchenDispatch extends Component
 {
@@ -20,13 +21,27 @@ class KitchenDispatch extends Component
     }
 
     /**
-     * Marca como listos todos los productos de ESTA(S) estaciè´¸n(es)
+     * Marca como listos todos los productos de ESTA(S) estaci¨®n(es)
      * para el pedido indicado. Si con eso quedan todos los productos
      * del pedido (de todas las estaciones, no solo las de esta
      * pantalla) listos, el pedido completo pasa a 'ready'.
      */
     public function ready($orderId)
     {
+        // Sin el permiso de ver todo, un mesero solo puede despachar
+        // sus propios pedidos (evita que fuerce el wire:click sobre
+        // el id de un pedido ajeno).
+        if (! Auth::user()->can('kitchen_dispatch.view_all')) {
+
+            $belongsToUser = KitchenOrder::where('id', $orderId)
+                ->whereHas('order', function ($q) {
+                    $q->where('user_id', Auth::id());
+                })
+                ->exists();
+
+            abort_unless($belongsToUser, 403, 'Este pedido no te pertenece.');
+        }
+
         $stationIds = $this->resolveStationIds($this->station);
 
         KitchenOrderDetail::where('kitchen_order_id', $orderId)
@@ -35,6 +50,7 @@ class KitchenDispatch extends Component
             ->update([
                 'status' => 'ready',
                 'ready_at' => now(),
+                'resolved_by' => Auth::id(),
             ]);
 
         $pendingElsewhere = KitchenOrderDetail::where('kitchen_order_id', $orderId)
@@ -65,7 +81,10 @@ class KitchenDispatch extends Component
 
         $switcher = $this->buildStationSwitcher('kitchen.dispatch', $stationIds);
 
-        $details = KitchenOrderDetail::with([
+        // Sin el permiso, cada mesero ve ¨²nicamente sus propios pedidos.
+        $canViewAll = Auth::user()->can('kitchen_dispatch.view_all');
+
+        $query = KitchenOrderDetail::with([
 
             'station',
 
@@ -82,18 +101,25 @@ class KitchenDispatch extends Component
 
             $query->where('status', 'pending');
 
-        })
-        ->get()
-        ->sortBy(function ($item) {
-            return $item->kitchenOrder->sent_at;
-        })
-        ->values();
+        });
+
+        if (! $canViewAll) {
+            $query->whereHas('kitchenOrder.order', function ($q) {
+                $q->where('user_id', Auth::id());
+            });
+        }
+
+        $details = $query->get()
+            ->sortBy(function ($item) {
+                return $item->kitchenOrder->sent_at;
+            })
+            ->values();
 
         $tickets = $details->groupBy('kitchen_order_id');
 
         return view(
             'restaurante.kitchen.dispatch',
-            compact('tickets', 'stationLabel', 'isCombined', 'switcher')
+            compact('tickets', 'stationLabel', 'isCombined', 'switcher', 'canViewAll')
         );
     }
 }
