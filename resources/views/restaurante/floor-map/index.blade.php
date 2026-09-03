@@ -5,7 +5,7 @@
     |--------------------------------------------------------------------------
     | Cada piso tiene un color visualmente diferente.
     |
-    | El rojo se evita deliberadamente porque est√° reservado para
+    | El rojo se evita deliberadamente porque est· reservado para
     | identificar mesas OCUPADAS.
     |--------------------------------------------------------------------------
     */
@@ -17,13 +17,13 @@
         '#00897B', // Turquesa
         '#2E7D32', // Verde
         '#EF6C00', // Naranja
-        '#3949AB', // √çndigo
+        '#3949AB', // Õndigo
         '#00838F', // Cian
     ];
 
     /*
     |--------------------------------------------------------------------------
-    | √çCONOS DE LOS PISOS
+    | ÕCONOS DE LOS PISOS
     |--------------------------------------------------------------------------
     */
 
@@ -40,7 +40,7 @@
 
     /*
     |--------------------------------------------------------------------------
-    | √çNDICE DEL PISO
+    | ÕNDICE DEL PISO
     |--------------------------------------------------------------------------
     */
 
@@ -75,7 +75,7 @@
 
     /*
     |--------------------------------------------------------------------------
-    | √çCONO DEL PISO
+    | ÕCONO DEL PISO
     |--------------------------------------------------------------------------
     */
 
@@ -159,7 +159,7 @@
         <div class="status-legend-item"><span class="dot" style="background:#424242"></span> Pago</div>
     </div>
 
-    {{-- BANNER MODO UNI√ìN --}}
+    {{-- BANNER MODO UNI”N --}}
     @if($mergingTableId)
         <div class="merge-mode-banner mb-4">
             <span><i class="fas fa-link mr-2"></i> Selecciona la mesa que quieres unir</span>
@@ -193,14 +193,14 @@
                     ])
                 >
 
-                    {{-- BADGE DE PISO: mismo color que la pesta√±a/banner activos,
-                         as√≠ el mesero confirma de un vistazo que est√° en el piso correcto --}}
+                    {{-- BADGE DE PISO: mismo color que la pestaÒa/banner activos,
+                         asÌ el mesero confirma de un vistazo que est· en el piso correcto --}}
                     <div class="table-floor-badge">
                         <i class="fas {{ $selectedIcon }}"></i>
                         {{ optional($selectedFloorModel)->name }}
                     </div>
 
-                    {{-- BADGE DE UNI√ìN: solo aparece si esta mesa est√° unida a otra --}}
+                    {{-- BADGE DE UNI”N: solo aparece si esta mesa est· unida a otra --}}
                     @if($table->mergeAsPrimary)
                         <div class="table-merge-badge">
                             <i class="fas fa-link"></i> Unida con {{ $table->mergeAsPrimary->secondaryTable->name }}
@@ -220,8 +220,8 @@
 
                         <div class="d-flex align-items-center" style="gap:6px;">
 
-                            {{-- BOT√ìN UNIR: solo si tiene permiso, la mesa tiene orden propia,
-                                 no est√° ya unida, y no estamos en medio de otra uni√≥n --}}
+                            {{-- BOT”N UNIR: solo si tiene permiso, la mesa tiene orden propia,
+                                 no est· ya unida, y no estamos en medio de otra uniÛn --}}
                             @can('floor_map.merge_tables')
                                 @if($table->activeOrder && !$table->mergeAsPrimary && !$table->mergeAsSecondary && !$mergingTableId)
                                     <button
@@ -487,13 +487,13 @@
     transform: scale(.98);
 }
 
-/* Mesa origen de la uni√≥n (la que ya elegiste) */
+/* Mesa origen de la uniÛn (la que ya elegiste) */
 .table-pos-card.merge-origin {
     outline: 3px solid #1565C0;
     outline-offset: 2px;
 }
 
-/* Mesas candidatas a recibir la uni√≥n: parpadeo suave para guiar el ojo */
+/* Mesas candidatas a recibir la uniÛn: parpadeo suave para guiar el ojo */
 .table-pos-card.merge-target-hint {
     animation: merge-pulse 1.2s infinite;
 }
@@ -510,7 +510,7 @@
 .status-cleaning   { border-top: 6px solid #039be5; }
 .status-payment    { border-top: 6px solid #424242; }
 
-/* Badge de piso: mismo color que la pesta√±a/banner activos (--floor-color) */
+/* Badge de piso: mismo color que la pestaÒa/banner activos (--floor-color) */
 .table-floor-badge {
     display: inline-flex;
     align-items: center;
@@ -532,7 +532,7 @@
     color: var(--floor-color);
 }
 
-/* Badge de uni√≥n */
+/* Badge de uniÛn */
 .table-merge-badge {
     display: inline-flex;
     align-items: center;
@@ -546,7 +546,7 @@
     margin-bottom: 10px;
 }
 
-/* Bot√≥n unir mesa (icono cadena, junto al c√≠rculo de estado) */
+/* BotÛn unir mesa (icono cadena, junto al cÌrculo de estado) */
 .table-merge-btn {
     width: 26px;
     height: 26px;
@@ -684,7 +684,7 @@ document.addEventListener('livewire:init', () => {
 
         Swal.fire({
             icon: 'success',
-            title: '¬°Listo!',
+            title: '°Listo!',
             text: event.message,
             confirmButtonText: 'Entendido',
             timer: 2000,

@@ -2,18 +2,46 @@
 <html>
 <head>
 <meta charset="utf-8">
+
 <style>
-body {
-    width: 58mm;
-    font-family: monospace;
-    font-size: 10px;
+/* =========================
+   CONFIGURACIÓN IMPRESIÓN
+========================= */
+@page {
+    size: 80mm auto;
+    margin: 1.5mm;
 }
 
-.center { text-align: center; }
+/* =========================
+   GENERAL
+========================= */
+body {
+    width: 70mm;
+    margin: 0 auto;
+    padding: 0;
+    font-family: monospace;
+    font-size: 11px;
+    line-height: 1.15;
+    color: #000;
+}
+
+/* =========================
+   UTILIDADES
+========================= */
+.center {
+    text-align: center;
+}
 
 .row {
     display: flex;
     justify-content: space-between;
+    align-items: flex-start;
+    gap: 5px;
+}
+
+.row span:last-child {
+    text-align: right;
+    white-space: nowrap;
 }
 
 hr {
@@ -21,69 +49,127 @@ hr {
     border-top: 1px dashed #000;
     margin: 4px 0;
 }
+
+strong {
+    font-weight: bold;
+}
+
+/* =========================
+   LOGO
+========================= */
+.logo {
+    width: 115px;
+    max-width: 100%;
+}
+
+/* =========================
+   QR
+========================= */
+.qr svg {
+    width: 90px;
+    height: 90px;
+}
+
+/* =========================
+   TEXTO
+========================= */
+.small {
+    font-size: 10px;
+}
 </style>
+
 </head>
 
 <body onload="window.print()">
 
-{{-- 🖼️ LOGO --}}
+{{-- =========================
+     LOGO
+========================= --}}
 <div class="center">
-    <img src="{{ asset('vendor/adminlte/dist/img/logo.png') }}" style="width: 100px;">
+    <img 
+        src="{{ asset('vendor/adminlte/dist/img/logo.png') }}" 
+        class="logo"
+    >
 </div>
 
-<br>
+{{-- =========================
+     ENCABEZADO
+========================= --}}
+<div class="center small">
+    <strong>PIQUETEADERO PORKY DE LA 105</strong><br>
+    Cra. 103F #139 - 20<br>
+    Tel: 6812353 - 3118312457<br>
+    NIT: 79869213-1
+</div>
 
-{{-- 🏪 ENCABEZADO --}}
+<hr>
+
+{{-- =========================
+     PEDIDO
+========================= --}}
 <div class="center">
-    <strong>Piqueteadero Porky de la 105</strong><br>
-    Crr. 103F 139 - 20<br>
-    Tel: 681 23 53<br>
-    Cel: 311 831 2457<br>
-    NIT: 79869213-1<br>
+    <strong>PEDIDO #{{ $order->id }}</strong>
 </div>
 
 <hr>
 
 <div class="center">
-    <strong>Pedido #{{ $order->id }}</strong>
+    {{ \Carbon\Carbon::now()->translatedFormat('d/m/Y') }} - {{ \Carbon\Carbon::now()->format('h:i A') }}
 </div>
 
 <hr>
 
-{{-- 👤 CLIENTE --}}
-<div>
-    Nombre: {{ $order->customer?->name }}<br>
+{{-- =========================
+     CLIENTE
+========================= --}}
+@php
+    $address = $order->customer?->defaultAddress;
+@endphp
 
-    @php
-        $address = $order->customer?->defaultAddress;
-    @endphp
+<div class="small">
+    <strong>Cliente:</strong>
+    {{ $order->customer?->name ?? 'Consumidor Final' }}<br>
 
-    Dir: {{ $address?->address ?? '---' }}<br>
+    <strong>Dir:</strong>
+    {{ $address?->address ?? '---' }}<br>
 
     @if($address?->reference)
-        Ref: {{ $address->reference }}<br>
+        <strong>Ref:</strong>
+        {{ $address->reference }}<br>
     @endif
 
-    Tel: {{ $order->customer?->telephone }}<br>
+    <strong>Tel:</strong>
+    {{ $order->customer?->telephone ?? '---' }}
 </div>
 
 <hr>
 
-{{-- 🛒 PRODUCTOS --}}
+{{-- =========================
+     PRODUCTOS
+========================= --}}
 @foreach($order->details as $item)
 
-    <div>{{ $item->product_name }}</div>
+    <div>
+        {{ $item->product_name }}
+    </div>
 
     <div class="row">
-        <span>{{ $item->quantity }} x {{ number_format($item->price) }}</span>
-        <span>${{ number_format($item->subtotal) }}</span>
+        <span>
+            {{ $item->quantity }} x {{ number_format($item->price) }}
+        </span>
+
+        <span>
+            ${{ number_format($item->subtotal) }}
+        </span>
     </div>
 
 @endforeach
 
 <hr>
 
-{{-- 💰 RESUMEN --}}
+{{-- =========================
+     RESUMEN
+========================= --}}
 <div class="row">
     <span>Subtotal</span>
     <span>${{ number_format($order->subtotal) }}</span>
@@ -105,38 +191,60 @@ hr {
 
 <hr>
 
-{{-- 🔥 TOTAL --}}
-<div class="row">
+{{-- =========================
+     TOTAL
+========================= --}}
+<div class="row" style="font-size:13px;">
     <strong>TOTAL</strong>
-    <strong>${{ number_format($order->total) }}</strong>
+
+    <strong>
+        ${{ number_format($order->total) }}
+    </strong>
 </div>
 
 <hr>
 
-{{-- 📝 INDICACIONES --}}
+{{-- =========================
+     INDICACIONES
+========================= --}}
 @if($order->indication)
-Indicaciones:<br>
-{{ $order->indication }}<br>
-@endif
 
-{{-- 💬 COMENTARIOS --}}
-@if($order->comment)
-Comentarios:<br>
-{{ $order->comment }}<br>
-@endif
+<div class="small">
+    <strong>Indicaciones:</strong><br>
+    {{ $order->indication }}
+</div>
 
 <hr>
 
-{{-- 🔳 QR --}}
-<div class="center">
-    {!! QrCode::size(80)->generate($order->id) !!}
+@endif
+
+{{-- =========================
+     COMENTARIOS
+========================= --}}
+@if($order->comment)
+
+<div class="small">
+    <strong>Comentarios:</strong><br>
+    {{ $order->comment }}
+</div>
+
+<hr>
+
+@endif
+
+{{-- =========================
+     QR
+========================= --}}
+<div class="center qr">
+    {!! QrCode::size(90)->generate($order->id) !!}
+</div>
+
+<div class="center small">
+    ¡GRACIAS POR SU COMPRA!<br>
+    Vuelva pronto
 </div>
 
 <br>
-
-<div class="center">
-    Gracias por su compra
-</div>
 
 </body>
 </html>

@@ -15,19 +15,41 @@
 
             <div class="modal-body">
 
-                {{-- 🔹 CLIENTE Y FECHA --}}
-                <div class="card mb-3 shadow-sm">
-                    <div class="card-body py-2">
-                        <div class="row">
-
+            {{-- CLIENTE O MESA --}}
+            <div class="card mb-3 shadow-sm">
+                <div class="card-body py-2">
+                    <div class="row">
+            
+                        @if($is_table_order)
+            
+                            <div class="col-md-4">
+                                <small class="text-muted">Mesa</small><br>
+                                <strong>
+                                    <i class="fas fa-utensils mr-1 text-danger"></i>
+                                    {{ $table_name }}
+                                </strong>
+                                @if($floor_name)
+                                    <br><small class="text-muted">{{ $floor_name }}</small>
+                                @endif
+                            </div>
+            
+                            <div class="col-md-4">
+                                <small class="text-muted">Mesero</small><br>
+                                <strong>
+                                    <i class="fas fa-user-tie mr-1 text-primary"></i>
+                                    {{ $waiter_name }}
+                                </strong>
+                            </div>
+            
+                        @else
+            
                             <div class="col-md-4">
                                 <small class="text-muted">Cliente</small><br>
                                 <strong>{{ $customer_name ?? 'N/A' }}</strong>
                             </div>
-
+            
                             <div class="col-md-4">
-                                <small class="text-muted">Teléfono</small><br>
-
+                                <small class="text-muted">Telefono</small><br>
                                 @if($customer_phone)
                                     <strong>
                                         <i class="fas fa-phone-alt mr-1 text-success"></i>
@@ -36,19 +58,20 @@
                                 @else
                                     <strong>N/A</strong>
                                 @endif
-
                             </div>
-
-                            <div class="col-md-4 text-md-right mt-2 mt-md-0">
-                                <small class="text-muted">Fecha</small><br>
-                                <strong>{{ $ordered_at }}</strong>
-                            </div>
-
+            
+                        @endif
+            
+                        <div class="col-md-4 text-md-right mt-2 mt-md-0">
+                            <small class="text-muted">Fecha</small><br>
+                            <strong>{{ $ordered_at }}</strong>
                         </div>
+            
                     </div>
                 </div>
+            </div>
 
-                {{-- 🔹 INFO PEDIDO --}}
+                {{-- INFO PEDIDO --}}
                 <div class="card mb-3 shadow-sm">
                     <div class="card-body py-2">
                         <div class="row text-center text-md-left">
@@ -67,35 +90,112 @@
 
                             <div class="col-md-4">
                                 <small class="text-muted">Pago</small><br>
-                                <strong>{{ ucfirst($payment_method) }}</strong>
+                                @if($is_table_order)
+                                    <span class="badge badge-{{ $is_paid ? 'success' : 'warning' }}">
+                                        {{ $is_paid ? 'Pagado' : 'Pendiente' }}
+                                    </span>
+                                @else
+                                    <strong>{{ ucfirst($payment_method) }}</strong>
+                                @endif
                             </div>
 
                         </div>
                     </div>
                 </div>
 
-                {{-- 🔹 ENTREGA --}}
-                <div class="card mb-3 shadow-sm">
-                    <div class="card-body py-2">
-                        <div class="row">
+@if($is_table_order)
 
-                            <div class="col-md-6">
-                                <small class="text-muted">Domiciliario</small><br>
-                                <strong>{{ $delivery_name ?? 'Sin asignar' }}</strong>
-                            </div>
+    {{-- FORMAS DE PAGO --}}
+    <div class="card mb-3 shadow-sm">
+        <div class="card-body py-2">
 
-                            <div class="col-md-6 mt-2 mt-md-0">
-                                <small class="text-muted">Dirección</small><br>
-                                <strong>{{ $customer_address ?? 'Sin dirección' }}</strong>
-                            </div>
+            <small class="text-muted">Formas de pago</small>
 
-                        </div>
-                    </div>
+            @forelse($payments as $pay)
+                <div class="d-flex justify-content-between border-bottom py-1">
+                    <strong>
+                        <i class="fas fa-money-bill-wave mr-1 text-success"></i>
+                        {{ $pay['method'] }}
+                    </strong>
+                    <span>$ {{ number_format($pay['amount'], 0, ',', '.') }}</span>
                 </div>
+            @empty
+                <div class="py-1">
+                    <span class="badge badge-warning">
+                        <i class="fas fa-clock mr-1"></i> Pendiente de pago
+                    </span>
+                </div>
+            @endforelse
+
+            @if($tip > 0)
+                <div class="d-flex justify-content-between pt-2">
+                    <small class="text-muted">Propina</small>
+                    <small class="text-muted">
+                        $ {{ number_format($tip, 0, ',', '.') }}
+                    </small>
+                </div>
+            @endif
+
+        </div>
+    </div>
+
+@else
+
+    {{-- ENTREGA --}}
+    <div class="card mb-3 shadow-sm">
+        <div class="card-body py-2">
+            <div class="row">
+
+                <div class="col-md-6">
+                    <small class="text-muted">Domiciliario</small><br>
+                    <strong>{{ $delivery_name ?? 'Sin asignar' }}</strong>
+                </div>
+
+                <div class="col-md-6 mt-2 mt-md-0">
+                    <small class="text-muted">Direccion</small><br>
+                    <strong>{{ $customer_address ?? 'Sin dirección' }}</strong>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+@endif
+
+@if($is_table_order && !empty($cancelledItems))
+
+    {{-- PRODUCTOS CANCELADOS --}}
+    <div class="card mb-3 shadow-sm border-danger">
+        <div class="card-body py-2">
+
+            <small class="text-danger font-weight-bold">
+                <i class="fas fa-ban mr-1"></i> Productos cancelados (ya enviados a cocina)
+            </small>
+
+            @foreach($cancelledItems as $item)
+                <div class="d-flex justify-content-between align-items-start border-bottom py-1">
+                    <div>
+                        <strong>{{ $item['quantity'] }}x {{ $item['product_name'] }}</strong>
+                        <br>
+                        <small class="text-muted">
+                            Cancelado por {{ $item['cancelled_by'] ?? 'Sin registro' }}
+                            — {{ $item['cancelled_at'] }}
+                        </small>
+                    </div>
+                    <span class="text-muted">
+                        $ {{ number_format($item['subtotal'], 0, ',', '.') }}
+                    </span>
+                </div>
+            @endforeach
+
+        </div>
+    </div>
+
+@endif
 
                 <hr>
 
-                {{-- 🛒 DETALLE --}}
+                {{-- DETALLE --}}
                 <div class="table-responsive">
                     <table class="table table-sm table-bordered">
                         <thead class="bg-light">
@@ -114,7 +214,7 @@
                                         @if(!empty($item['comment']))
                                             <br>
                                             <small class="text-muted">
-                                                📝 {{ $item['comment'] }}
+                                                {{ $item['comment'] }}
                                             </small>
                                         @endif
                                     </td>
@@ -137,7 +237,7 @@
                     </table>
                 </div>
 
-                {{-- 💰 TOTALES --}}
+                {{-- TOTALES --}}
                 <div class="row mt-3">
                     <div class="col-md-6">
                         @if($comment)

@@ -37,38 +37,49 @@ class CustomerInlineCreate extends Component
             'telephone' => 'required|max:50',
             'address' => 'required|string|max:250',
         ]);
-
-        // 🔥 evitar duplicados por teléfono
-        $existing = Customer::where('telephone', $this->telephone)->first();
-
-        if ($existing) {
-            $this->dispatch('customerCreated', id: $existing->id);
+    
+        try {
+    
+            $existing = Customer::where('telephone', $this->telephone)->first();
+    
+            if ($existing) {
+    
+                $this->dispatch('customerCreated', id: $existing->id);
+                $this->dispatch('close-inline-create-modal');
+    
+                return;
+            }
+    
+            $customer = Customer::create([
+                'name' => $this->name,
+                'telephone' => $this->telephone,
+                'email' => 'temp_' . time() . '@piqueteaderoporky105.com',
+                'status' => 1,
+                'password' => bcrypt(str()->random(12)),
+            ]);
+    
+            $customer->addresses()->create([
+                'address' => $this->address,
+                'reference' => $this->reference,
+                'latitude' => 0,
+                'longitude' => 0,
+                'is_default' => 1
+            ]);
+    
+            $this->dispatch('customerCreated', id: $customer->id);
+    
             $this->dispatch('close-inline-create-modal');
-            return;
+    
+            $this->resetForm();
+    
+        } catch (\Exception $e) {
+    
+            logger()->error($e);
+    
+            session()->flash('error', $e->getMessage());
+    
+            dd($e->getMessage());
         }
-
-        // 🔥 crear cliente
-        $customer = Customer::create([
-            'name' => $this->name,
-            'telephone' => $this->telephone,
-            'email' => null,
-            'status' => 1,
-            'password' => bcrypt('12345678'),
-        ]);
-
-        // 🔥 crear dirección
-        $customer->addresses()->create([
-            'address' => $this->address,
-            'reference' => $this->reference,
-            'latitude' => 0,
-            'longitude' => 0,
-            'is_default' => 1
-        ]);
-
-        $this->dispatch('customerCreated', id: $customer->id);
-        $this->dispatch('close-inline-create-modal');
-
-        $this->resetForm();
     }
 
     public function resetForm()

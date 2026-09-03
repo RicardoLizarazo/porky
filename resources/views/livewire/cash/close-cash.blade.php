@@ -458,3 +458,12 @@
 @endif
 
 </div>
+@push('script')
+    <script>
+    document.addEventListener('livewire:init', () => {
+        Livewire.on('open-print', (event) => {
+            window.open(event.url ?? event[0].url, '_blank');
+        });
+    });
+    </script>
+@endpush

@@ -46,9 +46,7 @@ class CustomerOrders extends Component
             'delivery'
         ])->findOrFail($id);
 
-        if ($order->customer_id !== $this->getCustomerId()) {
-            abort(403);
-        }
+
 
         $this->order_id = $order->id;
 

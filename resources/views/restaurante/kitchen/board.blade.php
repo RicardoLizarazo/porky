@@ -301,18 +301,18 @@
         }
     </style>
 
-    <div class="board-header">
+        <div class="board-header">
         <h1 class="station-name">
             <i class="fas fa-fire"></i>
             {{ strtoupper($stationLabel) }}
         </h1>
  
         <div class="pending-count">
-            {{ $details->count() }} {{ $details->count() === 1 ? 'PEDIDO PENDIENTE' : 'PEDIDOS PENDIENTES' }}
+            {{ $tickets->count() }} {{ $tickets->count() === 1 ? 'PEDIDO PENDIENTE' : 'PEDIDOS PENDIENTES' }}
         </div>
     </div>
  
-    @if($details->isEmpty())
+    @if($tickets->isEmpty())
  
         <div class="empty-state">
             <i class="fas fa-check-circle fa-4x"></i>
@@ -324,9 +324,10 @@
         @php
             // Tamaño de "página" de rotación. Si tu pantalla es más chica
             // o más grande, ajusta este número — 6 es un punto medio
-            // razonable para una TV estándar en horizontal.
+            // razonable para una TV estándar en horizontal. Ahora cuenta
+            // MESAS (tickets agrupados), no productos individuales.
             $perPage = 6;
-            $pages = $details->chunk($perPage)->values();
+            $pages = $tickets->values()->chunk($perPage)->values();
         @endphp
  
         <div
@@ -351,10 +352,13 @@
  
                 <div class="grid" wire:key="page-{{ $i }}" x-show="page === {{ $i }}" x-transition.opacity.duration.500ms>
  
-                    @foreach($page as $item)
+                    @foreach($page as $items)
  
                         @php
-                            $ticket = $item->kitchenOrder;
+                            // Todos los items del grupo pertenecen al mismo
+                            // pedido, tomamos la cabecera del primero.
+                            $ticket = $items->first()->kitchenOrder;
+                            $orderId = $items->first()->kitchen_order_id;
  
                             $minutes = $ticket->sent_at
                                 ? (int) floor($ticket->sent_at->diffInMinutes(now()))
@@ -367,7 +371,7 @@
                                 : intdiv($minutes, 60) . 'h ' . str_pad($minutes % 60, 2, '0', STR_PAD_LEFT) . 'min';
                         @endphp
  
-                        <div class="ticket {{ $state }}" wire:key="detail-{{ $item->id }}">
+                        <div class="ticket {{ $state }}" wire:key="order-{{ $orderId }}">
  
                             <div class="ticket-head">
                                 <div>
@@ -391,26 +395,51 @@
                                 <div class="meta-row">
                                     <span class="chip floor-chip"><i class="fas fa-user"></i> {{ $ticket->order?->user?->name ?? 'N/A' }}</span>
                                     <span class="chip time-chip"><i class="fas fa-clock"></i> {{ $ticket->sent_at?->format('h:i A') }}</span>
-                                    @if($isCombined)
-                                        <span class="chip floor-chip"><i class="fas fa-fire"></i> {{ $item->station?->name }}</span>
-                                    @endif
                                 </div>
  
-                                <div class="product-line">
-                                    <span class="qty">{{ $item->quantity }}x</span>
-                                    {{ strtoupper($item->product_name) }}
-                                </div>
+                                {{-- Todos los productos de esta mesa para esta estación --}}
+                                @foreach($items as $item)
  
-                                @if($item->comment)
-                                    <div class="comment-box">
-                                        <strong><i class="fas fa-exclamation-triangle"></i> Observación:</strong>
-                                        {{ $item->comment }}
+                                    @php
+                                        // Mismo patrón que EMPAQUE=N|comentario: se parsea el
+                                        // comment que llega a cocina para separar el precio
+                                        // ajustado (media porción, ej. Chunchullo/Rellena) de
+                                        // la observación libre del mesero.
+                                        $adjustedPrice = null;
+                                        $displayComment = $item->comment;
+ 
+                                        if (preg_match('/PRECIO_AJUSTADO=(\d+)\|?/', $item->comment ?? '', $m)) {
+                                            $adjustedPrice = (int) $m[1];
+                                            $displayComment = trim(str_replace($m[0], '', $item->comment));
+                                        }
+                                    @endphp
+ 
+                                    <div class="product-line compact">
+                                        <span class="qty">{{ $item->quantity }}x</span>
+                                        {{ strtoupper($item->product_name) }}
+                                        @if($adjustedPrice !== null)
+                                            <span class="adjusted-tag">
+                                                <i class="fas fa-balance-scale"></i>
+                                                ${{ number_format($adjustedPrice,0,',','.') }}
+                                            </span>
+                                        @endif
+                                        @if($isCombined)
+                                            <span class="chip floor-chip" style="font-size:.7rem; vertical-align: middle;">
+                                                {{ $item->station?->name }}
+                                            </span>
+                                        @endif
                                     </div>
-                                @endif
+ 
+                                    @if($displayComment)
+                                        <div class="comment-box compact">
+                                            <strong><i class="fas fa-exclamation-triangle"></i> Observación:</strong>
+                                            {{ $displayComment }}
+                                        </div>
+                                    @endif
+ 
+                                @endforeach
  
                                 <div class="price-row">
-                                    <span>Unidad ${{ number_format($item->price,0,',','.') }}</span>
-                                    <span>Item ${{ number_format($item->subtotal,0,',','.') }}</span>
                                     <span class="order-total">Total ${{ number_format($ticket->order?->total ?? 0,0,',','.') }}</span>
                                 </div>
  

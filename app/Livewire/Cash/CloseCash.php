@@ -24,6 +24,8 @@ class CloseCash extends Component
         'closing_notes' => 'nullable|string|max:1000',
 
     ];
+    
+    public $lastClosedSessionId = null;
 
     /*
     |--------------------------------------------------------------------------
@@ -36,8 +38,8 @@ class CloseCash extends Component
         $openSessions = $this->userOpenSessions();
 
         // Si solo tiene una caja abierta, se entra directo al cierre (igual
-        // que antes). Si tiene varias (ej. Salón Principal, Salón Rojo,
-        // Salón Blanco), primero debe elegir cuál va a cerrar.
+        // que antes). Si tiene varias (ej. Salon Principal, Salon Rojo,
+        // Salon Blanco), primero debe elegir cual va a cerrar.
         if ($openSessions->count() === 1) {
 
             $this->selectSession(
@@ -48,7 +50,7 @@ class CloseCash extends Component
 
     /*
     |--------------------------------------------------------------------------
-    | SELECCIÓN DE CAJA A CERRAR
+    | SELECCION DE CAJA A CERRAR
     |--------------------------------------------------------------------------
     */
 
@@ -175,7 +177,7 @@ class CloseCash extends Component
 
         /*
         |--------------------------------------------------------------------------
-        | CERRAR SESIÓN
+        | CERRAR SESION
         |--------------------------------------------------------------------------
         */
 
@@ -212,7 +214,9 @@ class CloseCash extends Component
 
             ]);
         });
-
+        
+        $this->lastClosedSessionId = $this->session->id;
+        
         $this->dispatch(
             'swal',
             icon: 'success',
@@ -220,8 +224,9 @@ class CloseCash extends Component
         );
 
         // Si el usuario tiene otras cajas abiertas (ej. le falta cerrar el
-        // Salón Rojo y el Salón Blanco), lo devolvemos al selector en vez de
+        // Salon Rojo y el Salon Blanco), lo devolvemos al selector en vez de
         // sacarlo del flujo de cierre.
+        $this->dispatch('open-print', url: route('cash.close.print', $this->lastClosedSessionId));
         $remainingOpen = $this->userOpenSessions();
 
         $this->reset([

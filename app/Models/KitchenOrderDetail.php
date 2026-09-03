@@ -19,6 +19,11 @@ class KitchenOrderDetail extends Model
         'status',
         'ready_at'
     ];
+    
+    protected $casts = [
+    'ready_at' => 'datetime',
+    ];
+
 
     public function kitchenOrder()
     {
@@ -34,4 +39,10 @@ class KitchenOrderDetail extends Model
             'kitchen_station_id'
         );
     }
+    
+    public function resolvedBy()
+    {
+        return $this->belongsTo(User::class, 'resolved_by');
+    }
+
 }

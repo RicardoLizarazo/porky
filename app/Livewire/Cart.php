@@ -28,14 +28,13 @@ class Cart extends Component
         'open-cart' => 'open',
         'close-cart' => 'close',
         'execute-confirm-order' => 'confirmOrder',
-        //'customerSelected' => 'customerSelected',
     ];
 
     public function mount()
     {
         $this->cart = session()->get('cart', []);
 
-        // 🔥 cargar clientes si es admin
+        // ðŸ”¥ cargar clientes si es admin
         if (Auth::check() && !Auth::guard('customer')->check()) {
             $this->customers = \App\Models\Customer::select('id','name','telephone')->get();
         }
@@ -140,7 +139,7 @@ class Cart extends Component
     public function confirm()
     {
         if (empty($this->cart)) {
-            $this->dispatch('order-error', 'El carrito está vacío');
+            $this->dispatch('order-error', 'El carrito estÃ¡ vacÃ­o');
             return;
         }
 
@@ -149,7 +148,7 @@ class Cart extends Component
             return;
         }
 
-        // 🔥 dispara swal
+        // ðŸ”¥ dispara swal
         $this->dispatch('confirm-order');
     }
 
@@ -171,7 +170,7 @@ class Cart extends Component
                 $customerId = $this->resolveCustomerId();
 
                 if (empty($this->cart)) {
-                    throw new \Exception('El carrito está vacío');
+                    throw new \Exception('El carrito estÃ¡ vacÃ­o');
                 }
 
                 $totalItems = collect($this->cart)->sum('quantity');
@@ -184,9 +183,9 @@ class Cart extends Component
 
                 $delivery = $this->delivery_cost ?? 0;
 
-                // 🔥 TOTAL CORRECTO
+                // ðŸ”¥ TOTAL CORRECTO
                 $total = $subtotal + $packaging + $delivery;
-
+                
                 // 🔥 Tipo de pedido
                 $typeId = 1; // Web
 
@@ -221,7 +220,7 @@ class Cart extends Component
                     ]);
                 }
 
-                // 🔥 limpiar carrito BIEN
+                // ðŸ”¥ limpiar carrito BIEN
                 session()->forget('cart');
 
                 $this->reset([
@@ -234,7 +233,7 @@ class Cart extends Component
 
                 $this->delivery_cost = 9000;
 
-                // 🔥 cerrar carrito
+                // ðŸ”¥ cerrar carrito
                 $this->close();
 
                 $this->dispatch('cart-updated');
@@ -264,6 +263,6 @@ class Cart extends Component
             return $this->customer_id;
         }
 
-        throw new \Exception('Debe iniciar sesión');
+        throw new \Exception('Debe iniciar sesiÃ³n');
     }
 }

@@ -17,7 +17,7 @@ class User extends Authenticatable
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable, HasRoles, LogsActivity;
 
-    /** Nombre del guard de autenticaci贸n */
+    /** Nombre del guard de autenticación */
     protected $guard_name = 'sanctum';
 
     /**
@@ -112,12 +112,12 @@ class User extends Authenticatable
     }
 
     /* ============================================================
-     * = AUDITOR脥A SPATIE
+     * = AUDITORÍA SPATIE
      * ============================================================
      */
 
     /**
-     * Configuraci贸n de auditor铆a con Spatie Activitylog.
+     * Configuración de auditoría con Spatie Activitylog.
      */
     public function getActivitylogOptions(): LogOptions
     {

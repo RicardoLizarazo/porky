@@ -6,11 +6,10 @@ use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\CashCloseController;
 use App\Http\Controllers\Auth\CustomerAuthController;
-use App\Http\Controllers\VitrinaQuickOpenController;
 use App\Livewire\Reports\ReportsModule;
-use App\Livewire\VitrinaAccess;
+use App\Http\Controllers\VitrinaQuickOpenController;
 
-// Página inicial → login
+// Pagina inicial login
 Route::get('/', function () {
     return view('auth.login');
 })->name('root');
@@ -21,6 +20,12 @@ Route::prefix('customer')->group(function () {
 
     Route::post('/login', [CustomerAuthController::class, 'login'])
         ->name('customer.login.post');
+        
+    Route::get('/register', [CustomerAuthController::class, 'showRegister'])
+        ->name('customer.register');
+
+    Route::post('/register', [CustomerAuthController::class, 'register'])
+        ->name('customer.register.post');
 
     Route::post('/logout', [CustomerAuthController::class, 'logout'])
         ->name('customer.logout');
@@ -40,6 +45,7 @@ Route::middleware(['auth.any'])->group(function () {
 Route::middleware(['web', 'auth'])
     ->get('/pos/vitrina/{station}', [VitrinaQuickOpenController::class, 'open'])
     ->name('pos.vitrina');
+
 
 Route::post('/logout-any', function (Request $request) {
 
@@ -64,7 +70,6 @@ Route::post('/logout-any', function (Request $request) {
 
 Auth::routes();
 
-
 Route::get('/orders/{order}/invoice', [OrderController::class, 'invoice'])->name('orders.invoice');
 Route::get('/orders/{order}/invoice-pdf', [OrderController::class, 'invoicePdf'])->name('orders.invoice.pdf');
 Route::get('/orders/{order}/ticket', [OrderController::class, 'ticket'])->name('orders.ticket');
@@ -78,8 +83,8 @@ Route::get('/kitchen-board/{station}', fn ($station) =>
         'livewire.restaurante.kitchen-board',
         compact('station')
     ))->name('kitchen.board');
-    
-// Rutas protegidas (solo si hay sesión web activa)
+
+// Rutas protegidas (solo si hay sesion web activa)
 Route::middleware(['auth'])->group(function () {
     Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
     Route::get('/dashboard', fn() => view('livewire.dashboard'))->name('dashboard');
@@ -110,22 +115,26 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/cash/close', fn() => view('livewire.cash.close'))->name('cash.close');
     Route::get('cash/close/{cashSession}/print', [CashCloseController::class, 'print'])->name('cash.close.print')->middleware('auth');
 
+    // COCINA — Despacho: SÍ requiere auth, porque aquí el staff marca
+    // pedidos como listos (una acción que escribe datos).
     Route::get('/kitchen-dispatch/{station}', fn ($station) =>
         view(
             'livewire.restaurante.kitchen-dispatch',
             compact('station')
         ))->name('kitchen.dispatch');
+    
+    Route::get('/kitchen-dispatch-history', fn() => view('livewire.restaurante.kitchen-dispatch-history'))->name('kitchen.dispatch.history');
 
-    // REPORTES WEB
+
+    // REPORTES
     Route::get('/reports', fn() => view('reports'))->name('reports');
     Route::get('/reports/{type}', function ($type) {
         request()->merge(['type' => $type]);
         return view('reports');
     })->name('reports.type');
-
+    
     // REPORTES ADMINISTRATIVOS RESTAURANTE
     Route::prefix('restaurant-reports')->name('restaurant.reports.')->group(function () {
-
         Route::get('/', fn() => view('restaurant-reports.dashboard'))
             ->name('dashboard');
 
@@ -138,7 +147,6 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/table', fn() => view('restaurant-reports.table'))
         ->name('table');
     });
-
 
     Route::get('/routes', function () {return view('routes.index');})->name('routes.index');
 });

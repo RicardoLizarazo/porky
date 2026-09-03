@@ -139,60 +139,73 @@ class DiningTable extends Model
         | SIN MESERO ASIGNADO
         |--------------------------------------------------------------------------
         */
-
+ 
         if (!$this->waiter_id) {
             return true;
         }
-
+ 
         /*
         |--------------------------------------------------------------------------
         | MISMO MESERO
         |--------------------------------------------------------------------------
         */
-
+ 
         if ((int) $this->waiter_id === (int) $user->id) {
             return true;
         }
-
+ 
         /*
         |--------------------------------------------------------------------------
-        | ADMIN / SUPERVISOR
+        | ADMIN / SUPERVISOR (override completo)
         |--------------------------------------------------------------------------
         */
-
+ 
         if ($user->can('orders.override')) {
             return true;
         }
-
+ 
+        /*
+        |--------------------------------------------------------------------------
+        | AGREGADO RÁPIDO (ej. Cajero que también es Mesero, agrega un
+        | producto puntual a una mesa que no es la suya, sin necesitar
+        | el override completo de administrador)
+        |--------------------------------------------------------------------------
+        */
+ 
+        if ($user->can('floor_map.add_product')) {
+            return true;
+        }
+ 
         return false;
     }
 
-/** Mesa efectiva de la orden: la propia, o la de la mesa principal si está unida como secundaria */
-public function effectiveOrder(): ?Order
-{
-    if ($this->activeOrder) {
-        return $this->activeOrder;
+
+    /** Mesa efectiva de la orden: la propia, o la de la mesa principal si está unida como secundaria */
+    public function effectiveOrder(): ?Order
+    {
+        if ($this->activeOrder) {
+            return $this->activeOrder;
+        }
+    
+        $merge = $this->mergeAsSecondary ?? $this->mergeAsSecondary()->first();
+    
+        return $merge?->primaryTable?->activeOrder;
     }
 
-    $merge = $this->mergeAsSecondary ?? $this->mergeAsSecondary()->first();
-
-    return $merge?->primaryTable?->activeOrder;
-}
-
-/** Libera la mesa y, si estaba unida, también la mesa hermana. Úsalo donde hoy cierras/pagas la orden. */
-public function releaseWithMerges(): void
-{
-    $merge = $this->mergeAsPrimary()->first() ?? $this->mergeAsSecondary()->first();
-
-    if ($merge) {
-        self::whereIn('id', [$merge->primary_table_id, $merge->secondary_table_id])
-            ->update(['status' => self::AVAILABLE, 'waiter_id' => null]);
-
-        $merge->update(['closed_at' => now()]);
-    } else {
-        $this->update(['status' => self::AVAILABLE, 'waiter_id' => null]);
+    /** Libera la mesa y, si estaba unida, también la mesa hermana. Úsalo donde hoy cierras/pagas la orden. */
+    public function releaseWithMerges(): void
+    {
+        $merge = $this->mergeAsPrimary()->first() ?? $this->mergeAsSecondary()->first();
+    
+        if ($merge) {
+            self::whereIn('id', [$merge->primary_table_id, $merge->secondary_table_id])
+                ->update(['status' => self::AVAILABLE, 'waiter_id' => null]);
+    
+            $merge->update(['closed_at' => now()]);
+        } else {
+            $this->update(['status' => self::AVAILABLE, 'waiter_id' => null]);
+        }
     }
-}
 
     /*
     |--------------------------------------------------------------------------

@@ -188,7 +188,7 @@ class Products extends Component
             'image' => $imagePath,
         ]);
 
-        // Reemplaza el set de estaciones por el que qued贸 marcado
+        // Reemplaza el set de estaciones por el que quedó marcado
         // (sync borra las que se desmarcaron y agrega las nuevas)
         $product->kitchenStations()->sync($this->kitchen_station_ids);
 

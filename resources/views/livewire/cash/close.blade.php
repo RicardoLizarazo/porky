@@ -23,3 +23,7 @@
 @section('css')
     @vite(['resources/css/app.css'])
 @stop
+
+@section('js')
+    @stack('script')
+@stop
