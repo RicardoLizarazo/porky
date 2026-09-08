@@ -102,6 +102,15 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/permissions', fn() => view('livewire.permissions'))->name('permissions');
     Route::get('/audit-logs', fn() => view('livewire.audit-logs'))->name('audit-logs');
 
+    // Inventario (Fase 4 — Entrega 1)
+    Route::get('/units', fn() => view('livewire.inventory.units'))->name('units');
+    Route::get('/inventory-items', fn() => view('livewire.inventory.inventory-items'))->name('inventory-items');
+    Route::get('/suppliers', fn() => view('livewire.inventory.suppliers'))->name('suppliers');
+    Route::get('/purchases', fn() => view('livewire.inventory.purchases'))->name('purchases');
+    Route::get('/purchase-returns', fn() => view('livewire.inventory.purchase-returns'))->name('purchase-returns');
+    Route::get('/inventory-movements', fn() => view('livewire.inventory.movements'))->name('inventory-movements');
+    Route::get('/price-history', fn() => view('livewire.inventory.price-history'))->name('price-history');
+
     Route::get('/pos/{order}', function (\App\Models\Order $order) {
         return view('livewire.pos-order', compact('order'));
     })->name('pos.show');
