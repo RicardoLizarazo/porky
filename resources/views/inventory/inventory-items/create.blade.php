@@ -37,7 +37,7 @@
                     <div class="row mt-2">
                         <div class="col-md-6">
                             <label class="font-weight-bold">Tipo</label>
-                            <select class="form-control @error('type') is-invalid @enderror" wire:model.defer="type">
+                            <select class="form-control @error('type') is-invalid @enderror" wire:model.live="type">
                                 @foreach($types as $value => $label)
                                     <option value="{{ $value }}">{{ $label }}</option>
                                 @endforeach
@@ -74,6 +74,20 @@
                             </select>
                         </div>
                     </div>
+
+                    @if($type === 'packaging')
+                        <div class="form-group mt-2">
+                            <div class="custom-control custom-switch">
+                                <input type="checkbox"
+                                       class="custom-control-input"
+                                       id="default_packaging_create"
+                                       wire:model.defer="is_default_packaging">
+                                <label class="custom-control-label" for="default_packaging_create">
+                                    Empaque por defecto (se descuenta solo con cada venta a domicilio/para llevar)
+                                </label>
+                            </div>
+                        </div>
+                    @endif
 
                     <div class="form-group mt-2">
                         <label class="font-weight-bold">Notas</label>

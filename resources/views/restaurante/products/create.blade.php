@@ -177,6 +177,24 @@
                             </div>
                         </div>
 
+                        {{-- INVENTARIO --}}
+                        <div class="col-md-12">
+                            <div class="form-group">
+                                <label class="font-weight-bold">Producto de inventario vinculado</label>
+                                <select class="form-control @error('inventory_item_id') is-invalid @enderror"
+                                        wire:model.defer="inventory_item_id">
+                                    <option value="">Ninguno (no descuenta inventario al vender)</option>
+                                    @foreach($inventoryItems as $id => $name)
+                                        <option value="{{ $id }}">{{ $name }}</option>
+                                    @endforeach
+                                </select>
+                                <small class="form-text text-muted">
+                                    Sólo para productos que se venden sin preparar (cerveza, gaseosa, arepa). Al vender este producto se descuenta automáticamente 1 unidad del inventario.
+                                </small>
+                                @error('inventory_item_id') <span class="invalid-feedback">{{ $message }}</span> @enderror
+                            </div>
+                        </div>
+
                     </div>
 
                     <hr>

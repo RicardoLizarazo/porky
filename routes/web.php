@@ -110,6 +110,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/purchase-returns', fn() => view('livewire.inventory.purchase-returns'))->name('purchase-returns');
     Route::get('/inventory-movements', fn() => view('livewire.inventory.movements'))->name('inventory-movements');
     Route::get('/price-history', fn() => view('livewire.inventory.price-history'))->name('price-history');
+    Route::get('/inventory-sync-issues', fn() => view('livewire.inventory.sync-issues'))->name('inventory-sync-issues');
 
     Route::get('/pos/{order}', function (\App\Models\Order $order) {
         return view('livewire.pos-order', compact('order'));

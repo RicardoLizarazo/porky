@@ -27,6 +27,7 @@ class InventoryItem extends Model
         'average_cost',
         'min_stock',
         'is_active',
+        'is_default_packaging',
         'notes',
     ];
 
@@ -35,6 +36,7 @@ class InventoryItem extends Model
         'average_cost' => 'float',
         'min_stock' => 'float',
         'is_active' => 'boolean',
+        'is_default_packaging' => 'boolean',
     ];
 
     protected $appends = ['type_label', 'value'];
@@ -87,6 +89,12 @@ class InventoryItem extends Model
     {
         return $query->whereNotNull('min_stock')
             ->whereColumn('stock', '<=', 'min_stock');
+    }
+
+    public function scopeDefaultPackaging($query)
+    {
+        return $query->where('type', self::TYPE_PACKAGING)
+            ->where('is_default_packaging', true);
     }
 
     /*

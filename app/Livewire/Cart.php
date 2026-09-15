@@ -6,6 +6,7 @@ use Livewire\Component;
 use App\Models\Product;
 use App\Models\Order;
 use App\Models\OrderDetail;
+use App\Services\Inventory\SalesInventorySync;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\On;
@@ -210,7 +211,7 @@ class Cart extends Component
                 ]);
 
                 foreach ($this->cart as $item) {
-                    OrderDetail::create([
+                    $detail = OrderDetail::create([
                         'order_id'     => $order->id,
                         'product_id'   => $item['id'],
                         'product_name' => $item['name'],
@@ -218,7 +219,11 @@ class Cart extends Component
                         'price'        => $item['price'],
                         'subtotal'     => $item['price'] * $item['quantity'],
                     ]);
+
+                    (new SalesInventorySync())->adjustProductStock($detail, (int) $item['quantity']);
                 }
+
+                (new SalesInventorySync())->applyDomicilioPackaging($order->fresh('details'));
 
                 // ðŸ”¥ limpiar carrito BIEN
                 session()->forget('cart');

@@ -11,6 +11,8 @@ class InventoryMovement extends Model
     const TYPE_WASTE_OUT = 'waste_out';
     const TYPE_EMPLOYEE_CONSUMPTION_OUT = 'employee_consumption_out';
     const TYPE_ADJUSTMENT = 'adjustment';
+    const TYPE_SALE_OUT = 'sale_out';
+    const TYPE_SALE_REVERSAL_IN = 'sale_reversal_in';
 
     public static array $types = [
         self::TYPE_PURCHASE_IN => 'Entrada por compra',
@@ -18,6 +20,8 @@ class InventoryMovement extends Model
         self::TYPE_WASTE_OUT => 'Merma',
         self::TYPE_EMPLOYEE_CONSUMPTION_OUT => 'Mercado de empleados',
         self::TYPE_ADJUSTMENT => 'Ajuste',
+        self::TYPE_SALE_OUT => 'Salida por venta',
+        self::TYPE_SALE_REVERSAL_IN => 'Reversión de venta',
     ];
 
     protected $fillable = [

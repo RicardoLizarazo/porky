@@ -34,6 +34,9 @@ class InventoryItems extends Component
     #[Validate('boolean')]
     public $is_active = true;
 
+    #[Validate('boolean')]
+    public $is_default_packaging = false;
+
     #[Validate('nullable')]
     public $notes;
 
@@ -66,11 +69,12 @@ class InventoryItems extends Component
     {
         $this->reset([
             'name', 'code', 'type', 'base_unit_id', 'min_stock',
-            'is_active', 'notes', 'altUnits',
+            'is_active', 'is_default_packaging', 'notes', 'altUnits',
         ]);
 
         $this->type = 'raw_material';
         $this->is_active = true;
+        $this->is_default_packaging = false;
         $this->resetValidation();
     }
 
@@ -120,6 +124,7 @@ class InventoryItems extends Component
             'base_unit_id' => $this->base_unit_id,
             'min_stock' => $this->min_stock ?: null,
             'is_active' => (bool) $this->is_active,
+            'is_default_packaging' => $this->type === InventoryItem::TYPE_PACKAGING && (bool) $this->is_default_packaging,
             'notes' => $this->notes,
         ]);
 
@@ -143,6 +148,7 @@ class InventoryItems extends Component
         $this->base_unit_id = $item->base_unit_id;
         $this->min_stock = $item->min_stock;
         $this->is_active = (bool) $item->is_active;
+        $this->is_default_packaging = (bool) $item->is_default_packaging;
         $this->notes = $item->notes;
 
         $this->altUnits = $item->itemUnits->map(fn($u) => [
@@ -166,6 +172,7 @@ class InventoryItems extends Component
             'base_unit_id' => $this->base_unit_id,
             'min_stock' => $this->min_stock ?: null,
             'is_active' => (bool) $this->is_active,
+            'is_default_packaging' => $this->type === InventoryItem::TYPE_PACKAGING && (bool) $this->is_default_packaging,
             'notes' => $this->notes,
         ]);
 

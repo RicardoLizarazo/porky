@@ -609,6 +609,13 @@ return [
                     'can'  => 'price_history.view',
                     'active' => ['price-history*'],
                 ],
+                [
+                    'text' => 'Pendientes de Inventario',
+                    'url'  => 'inventory-sync-issues',
+                    'icon' => 'fas fa-exclamation-triangle',
+                    'can'  => 'inventory_sync_issues.view',
+                    'active' => ['inventory-sync-issues*'],
+                ],
             ],
         ],
         [
