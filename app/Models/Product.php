@@ -13,6 +13,7 @@ class Product extends Model
         'name',
         'code',
         'category_id',
+        'inventory_item_id',
         'price',
         'description',
         'image',
@@ -42,6 +43,11 @@ class Product extends Model
     public function category()
     {
         return $this->belongsTo(Category::class);
+    }
+
+    public function inventoryItem()
+    {
+        return $this->belongsTo(InventoryItem::class);
     }
 
     public function locations()
@@ -158,6 +164,7 @@ class Product extends Model
             'products.name',
             'products.code',
             'products.category_id',
+            'products.inventory_item_id',
             'products.price',
             'products.description',
             'products.image',

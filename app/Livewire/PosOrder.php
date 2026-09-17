@@ -10,7 +10,9 @@ use App\Models\OrderDetail;
 use App\Models\KitchenOrder;
 use App\Models\KitchenOrderDetail;
 use App\Models\DiningTable;
+use App\Services\Inventory\SalesInventorySync;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Auth;
 
 class PosOrder extends Component
 {
@@ -230,7 +232,7 @@ class PosOrder extends Component
 
         } else {
 
-            OrderDetail::create([
+            $detail = OrderDetail::create([
 
                 'order_id' => $this->order->id,
 
@@ -247,6 +249,8 @@ class PosOrder extends Component
                 'comment' => $this->buildComment($options, 0),
             ]);
         }
+
+        (new SalesInventorySync())->adjustProductStock($detail, 1);
 
         $this->refreshOrder();
     }
@@ -319,9 +323,13 @@ class PosOrder extends Component
 
             $detail->save();
 
+            (new SalesInventorySync())->adjustProductStock($detail, -1);
+
         } else {
-            
+
             $this->cancelKitchenTicketsFor($detail);
+
+            (new SalesInventorySync())->reverseAllForReference(OrderDetail::class, $detail->id);
 
             $detail->delete();
         }
@@ -334,6 +342,8 @@ class PosOrder extends Component
         $detail = OrderDetail::findOrFail($detailId);
 
         $this->cancelKitchenTicketsFor($detail);
+
+        (new SalesInventorySync())->reverseAllForReference(OrderDetail::class, $detail->id);
 
         $detail->delete();
 
@@ -495,6 +505,8 @@ class PosOrder extends Component
 
         $detail->save();
 
+        (new SalesInventorySync())->syncLinePackaging($detail, $qty);
+
         $this->refreshOrder();
     }
 
@@ -520,6 +532,8 @@ class PosOrder extends Component
         );
 
         $detail->save();
+
+        (new SalesInventorySync())->syncLinePackaging($detail, $qty);
 
         $this->refreshOrder();
     }

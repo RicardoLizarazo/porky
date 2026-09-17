@@ -8,6 +8,7 @@ use App\Models\Category;
 use App\Models\KitchenStation;
 use App\Models\ProductRule;
 use App\Models\ProductOption;
+use App\Models\InventoryItem;
 use Livewire\Attributes\Validate;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\On;
@@ -47,6 +48,11 @@ class Products extends Component
     #[Validate('boolean')]
     public $allow_manual_price = false;
 
+    // Producto de inventario (tipo "reventa") que se descuenta solo al
+    // vender este producto, ej. cerveza/gaseosa. Opcional.
+    #[Validate('nullable|exists:inventory_items,id')]
+    public $inventory_item_id;
+
     // Ahora es un arreglo: un producto puede pertenecer a varias
     // estaciones (ej. una picada que va a Parrilla y a Picadas).
     #[Validate('array')]
@@ -72,6 +78,9 @@ class Products extends Component
             'categories' => Category::pluck('name','id'),
             'kitchenStations' => KitchenStation::active()
                 ->pluck('name','id'),
+            'inventoryItems' => InventoryItem::active()
+                ->where('type', InventoryItem::TYPE_RESALE)
+                ->pluck('name', 'id'),
         ]);
     }
 
@@ -88,6 +97,7 @@ class Products extends Component
             'is_visible',
             'is_active',
             'allow_manual_price',
+            'inventory_item_id',
             'image',
             'image_preview'
         ]);
@@ -122,6 +132,7 @@ class Products extends Component
             'name' => $this->name,
             'code' => $this->code,
             'category_id' => $this->category_id,
+            'inventory_item_id' => $this->inventory_item_id ?: null,
             'price' => $this->price,
             'description' => $this->description,
             'packaging_cost' => $this->packaging_cost ?? 0,
@@ -157,7 +168,8 @@ class Products extends Component
         $this->allow_manual_price = $product->allow_manual_price;
         $this->is_visible = $product->is_visible;
         $this->is_active = $product->is_active;
-        
+        $this->inventory_item_id = $product->inventory_item_id;
+
         $this->image_preview = $product->image_url;
 
         $this->dispatch('open-edit-modal');
@@ -179,6 +191,7 @@ class Products extends Component
             'name' => $this->name,
             'code' => $this->code,
             'category_id' => $this->category_id,
+            'inventory_item_id' => $this->inventory_item_id ?: null,
             'price' => $this->price,
             'description' => $this->description,
             'packaging_cost' => $this->packaging_cost ?? 0,

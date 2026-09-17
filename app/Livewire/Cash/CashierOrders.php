@@ -9,6 +9,7 @@ use App\Models\CashPayment;
 use App\Models\DiningTable;
 use App\Models\Customer;
 use App\Models\OrderCancellation;
+use App\Services\Inventory\SalesInventorySync;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\On;
 
@@ -470,18 +471,20 @@ class CashierOrders extends Component
      
      
         DB::transaction(function () use ($order) {
-     
+
             OrderCancellation::create([
                 'order_id' => $order->id,
                 'user_id' => auth()->id(),
                 'reason' => 'Cancelacion desde caja',
             ]);
-     
-     
+
+
             $order->update([
                 'status_id' => 6,
                 'closed_at' => now(),
             ]);
+
+            (new SalesInventorySync())->reverseAllForOrder($order->load('details'));
      
      
             /*
